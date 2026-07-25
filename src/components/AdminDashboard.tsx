@@ -123,6 +123,9 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
   const loadAdminData = async () => {
     try {
+      if (user) {
+        localStorage.setItem('offline_user_session', JSON.stringify(user));
+      }
       const [resStats, resUsers] = await Promise.all([
         fetch('/api/stats'),
         fetch('/api/users'),
@@ -130,10 +133,15 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
       const dataStats = await resStats.json();
       const dataUsers = await resUsers.json();
 
-      if (dataStats.stats) setStats(dataStats.stats);
+      if (dataStats) {
+        setStats(dataStats);
+        localStorage.setItem('cached_admin_stats', JSON.stringify(dataStats));
+      }
       if (dataUsers.users) setUsuarios(dataUsers.users);
     } catch (err) {
-      console.error('Error cargando datos de Admin:', err);
+      console.warn('Sin conexión. Cargando datos administrativos desde memoria offline...');
+      const cachedStats = localStorage.getItem('cached_admin_stats');
+      if (cachedStats) setStats(JSON.parse(cachedStats));
     }
   };
 
