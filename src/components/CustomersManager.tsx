@@ -436,10 +436,10 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           <button
             onClick={() => setSortDir((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))}
             className="p-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition flex items-center gap-1.5"
-            title={sortDir === 'ASC' ? 'Ordenando del 1 al N' : 'Ordenando del N al 1'}
+            title={sortDir === 'ASC' ? 'Ordenando del primer cliente registrado al último' : 'Ordenando del último cliente registrado al primero'}
           >
-            <ArrowUpDown className="w-3.5 h-3.5" />
-            <span>{sortDir === 'ASC' ? '1 ➔ N' : 'N ➔ 1'}</span>
+            <ArrowUpDown className="w-3.5 h-3.5 text-purple-400" />
+            <span>{sortDir === 'ASC' ? '⬆️ Primero ➔ Último' : '⬇️ Último ➔ Primero'}</span>
           </button>
 
           <button
