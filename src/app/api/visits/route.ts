@@ -38,6 +38,7 @@ export async function GET(request: Request) {
         c.plan AS cliente_plan,
         c.region AS cliente_region,
         c.direccion AS cliente_direccion,
+        c.coordenadas_gps AS cliente_coordenadas_gps,
         ut.nombre AS tecnico_nombre,
         uc.nombre AS creado_por_nombre
       FROM visitas v

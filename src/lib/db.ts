@@ -44,9 +44,14 @@ export async function initDb() {
       plan TEXT,
       region TEXT NOT NULL,
       direccion TEXT,
+      coordenadas_gps TEXT DEFAULT '',
       estado TEXT DEFAULT 'Activo'
     );
   `);
+
+  try {
+    await db.execute(`ALTER TABLE clientes ADD COLUMN coordenadas_gps TEXT DEFAULT '';`);
+  } catch (e) {}
 
   // Crear Tabla de Visitas
   await db.execute(`

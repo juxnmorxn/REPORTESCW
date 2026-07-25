@@ -17,15 +17,13 @@ import {
   List, 
   LayoutGrid, 
   Loader2, 
-  SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
-  ArrowRight,
-  UserCheck,
   CheckSquare,
   Square,
   Wrench,
-  AlertTriangle
+  MapPin,
+  ExternalLink
 } from 'lucide-react';
 import NotificationModal from './NotificationModal';
 
@@ -37,6 +35,7 @@ interface Customer {
   plan: string;
   region: string;
   direccion: string;
+  coordenadas_gps?: string;
   estado: string;
 }
 
@@ -49,6 +48,15 @@ interface CustomersManagerProps {
   };
   onOpenCreateVisitForCustomer?: (customer: Customer) => void;
 }
+
+export const getMapsUrl = (gpsString?: string) => {
+  if (!gpsString || !gpsString.trim()) return null;
+  const cleaned = gpsString.trim();
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+    return cleaned;
+  }
+  return `https://www.google.com/maps?q=${encodeURIComponent(cleaned)}`;
+};
 
 export default function CustomersManager({ user, onOpenCreateVisitForCustomer }: CustomersManagerProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -69,7 +77,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
   const [filtroRegion, setFiltroRegion] = useState('Todas');
   const [filtroTipo, setFiltroTipo] = useState('Todos');
   const [filtroEstado, setFiltroEstado] = useState('Todos');
-  const [sortDir, setSortDir] = useState<'ASC' | 'DESC'>('ASC'); // ASC: 1 al N, DESC: N al 1
+  const [sortDir, setSortDir] = useState<'ASC' | 'DESC'>('ASC');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(100);
 
@@ -83,6 +91,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
     plan: 'Estándar 50M',
     region: 'RB-OLT-Actopan',
     direccion: '',
+    coordenadas_gps: '',
     estado: 'Activo',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -102,7 +111,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
   });
   const [submittingIp, setSubmittingIp] = useState(false);
 
-  // Modal Asignación Masiva de Visitas por Lote a un Técnico
+  // Modal Asignación Masiva de Visitas por Lote
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchFormData, setBatchFormData] = useState({
     tecnico_id: '',
@@ -126,7 +135,6 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
     setNotification({ isOpen: true, message, type, title });
   };
 
-  // Cargar lista de técnicos registrados
   useEffect(() => {
     fetch('/api/users')
       .then((r) => r.json())
@@ -174,12 +182,33 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
       if (data.total !== undefined) setTotal(data.total);
       if (data.totalPages !== undefined) setTotalPages(data.totalPages);
     } catch (err) {
-      console.warn('Sin conexión. Cargando directorio de clientes desde memoria offline...');
-      const local = await getLocalCachedCustomers();
-      if (local.length > 0) {
-        setCustomers(local);
-        setTotal(local.length);
+      console.warn('Sin conexión. Ejecutando motor de búsqueda e intralógica offline...');
+      let local = await getLocalCachedCustomers();
+
+      // Búsqueda y filtrado instantáneo en memoria local offline
+      if (search.trim()) {
+        const term = search.trim().toLowerCase();
+        local = local.filter(
+          (c) =>
+            (c.nombre && c.nombre.toLowerCase().includes(term)) ||
+            (c.ip && c.ip.includes(term)) ||
+            (c.plan && c.plan.toLowerCase().includes(term)) ||
+            (c.direccion && c.direccion.toLowerCase().includes(term)) ||
+            (c.coordenadas_gps && c.coordenadas_gps.toLowerCase().includes(term))
+        );
       }
+
+      if (filtroRegion !== 'Todas') {
+        local = local.filter((c) => c.region === filtroRegion);
+      }
+
+      if (filtroTipo !== 'Todos') {
+        local = local.filter((c) => c.tipo_servicio === filtroTipo);
+      }
+
+      setCustomers(local);
+      setTotal(local.length);
+      setTotalPages(Math.ceil(local.length / limit) || 1);
     } finally {
       setLoading(false);
     }
@@ -189,7 +218,6 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
     fetchCustomers();
   }, [search, filtroRegion, filtroTipo, filtroEstado, sortDir, page, limit]);
 
-  // Manejo de Selección de Clientes para Lote
   const toggleSelectCustomer = (id: number) => {
     setSelectedCustomerIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -215,6 +243,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
       plan: 'Estándar 50M',
       region: regiones.length > 0 ? regiones[0] : 'RB-OLT-Actopan',
       direccion: '',
+      coordenadas_gps: '',
       estado: 'Activo',
     });
     setShowModal(true);
@@ -229,12 +258,12 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
       plan: c.plan || '',
       region: c.region,
       direccion: c.direccion || '',
+      coordenadas_gps: c.coordenadas_gps || '',
       estado: c.estado,
     });
     setShowModal(true);
   };
 
-  // Abrir modal de Cambio de IP de 1-clic para un cliente
   const handleOpenIpChangeForCustomer = (c: Customer) => {
     let subnetPrefix = '';
     if (c.ip && c.ip.includes('.')) {
@@ -285,7 +314,6 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
     }
   };
 
-  // Guardar Lote de Visitas Asignadas a un Técnico
   const handleSaveBatchVisits = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCustomerIds.length === 0) return;
@@ -377,19 +405,18 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
             📋 Directorio General de Clientes ({total})
           </h2>
           <p className="text-xs text-slate-400">
-            Selección múltiple por lote para asignación masiva de revisiones a un técnico por región.
+            Búsqueda instantánea en línea y fuera de línea con enlaces de navegación GPS Google Maps.
           </p>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {/* Alternar Vista Tabla vs Grid */}
           <div className="bg-slate-950 border border-slate-800 p-1 rounded-xl flex items-center gap-1">
             <button
               onClick={() => setViewStyle('table')}
               className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
                 viewStyle === 'table' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
-              title="Vista de Lista (Tabla)"
+              title="Vista de Lista"
             >
               <List className="w-4 h-4" />
               <span className="hidden md:inline">Lista</span>
@@ -406,7 +433,6 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
             </button>
           </div>
 
-          {/* Botón de Orden ASC / DESC */}
           <button
             onClick={() => setSortDir((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))}
             className="p-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition flex items-center gap-1.5"
@@ -436,7 +462,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       </div>
 
-      {/* BANNER FLOTANTE DE ACCIÓN MASIVA DE LOTE CUANDO HAY SELECCIÓN */}
+      {/* BANNER FLOTANTE DE ACCIÓN MASIVA */}
       {selectedCustomerIds.length > 0 && (
         <div className="bg-sky-950/90 border border-sky-500/50 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl animate-pulse-red">
           <div className="flex items-center gap-3">
@@ -444,11 +470,11 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
               <CheckSquare className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-white text-sm flex items-center gap-2">
+              <h3 className="font-extrabold text-white text-sm">
                 {selectedCustomerIds.length} Clientes Seleccionados para Revisión
               </h3>
               <p className="text-xs text-sky-300">
-                Puedes enviar esta lista de antenas con problema como un lote de trabajo a un solo técnico de región.
+                Puedes enviar esta lista de antenas como un lote de trabajo a un solo técnico de la región.
               </p>
             </div>
           </div>
@@ -464,26 +490,26 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
               onClick={() => {
                 setBatchFormData((prev) => ({
                   ...prev,
-                  motivo_reporte: `Revisión masiva de antenas con señal deficiente (${selectedCustomerIds.length} clientes en región ${filtroRegion})`,
+                  motivo_reporte: `Revisión masiva de antenas (${selectedCustomerIds.length} clientes en región ${filtroRegion})`,
                 }));
                 setShowBatchModal(true);
               }}
               className="bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-xs px-4 py-2 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95"
             >
               <Wrench className="w-4 h-4" />
-              <span>Asignar Lote a un Técnico</span>
+              <span>Asignar Lote a Técnico</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Barra de Búsqueda y Filtros Multicampo */}
+      {/* Barra de Búsqueda Offline Multicampo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
         <div className="relative sm:col-span-2">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por Nombre, IP, Plan o Dirección..."
+            placeholder="Buscar por Nombre, IP, Plan, Dirección o GPS..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -537,7 +563,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </select>
       </div>
 
-      {/* Contenido Principal: VISTA DE TABLA LISTA (Default) o GRID */}
+      {/* Contenido Principal */}
       {loading ? (
         <div className="p-12 text-center text-slate-400 text-sm animate-pulse space-y-2">
           <Loader2 className="w-8 h-8 mx-auto animate-spin text-purple-500" />
@@ -550,7 +576,6 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           <p className="text-xs text-slate-500">Prueba ajustando los filtros de búsqueda o registra un nuevo cliente.</p>
         </div>
       ) : viewStyle === 'table' ? (
-        /* VISTA DE LISTA / TABLA DE ALTA DENSIDAD CON CHECKBOX MASIVO */
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -575,7 +600,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                   <th className="py-3 px-3">Tecnología</th>
                   <th className="py-3 px-3">Plan</th>
                   <th className="py-3 px-3">Región / Router</th>
-                  <th className="py-3 px-4">Dirección</th>
+                  <th className="py-3 px-4">Dirección / Ubicación GPS</th>
                   <th className="py-3 px-3 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -584,6 +609,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                   const numOrdinal = (page - 1) * limit + idx + 1;
                   const isAntena = c.tipo_servicio === 'Antena';
                   const isSelected = selectedCustomerIds.includes(c.id);
+                  const mapsUrl = getMapsUrl(c.coordenadas_gps);
 
                   return (
                     <tr
@@ -627,16 +653,29 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                           {c.region}
                         </span>
                       </td>
-                      <td className="py-2.5 px-4 text-slate-400 max-w-xs truncate" title={c.direccion}>
-                        {c.direccion || '-'}
+                      <td className="py-2.5 px-4 text-slate-400 max-w-xs">
+                        <div className="space-y-1">
+                          <p className="truncate" title={c.direccion}>{c.direccion || 'Sin dirección'}</p>
+                          {mapsUrl && (
+                            <a
+                              href={mapsUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded-lg transition"
+                            >
+                              <MapPin className="w-3 h-3 text-emerald-400" />
+                              <span>Navegar GPS (Maps)</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* BOTÓN RÁPIDO 1-CLIC: CAMBIO DE IP / AP EN CAMPO */}
                           <button
                             onClick={() => handleOpenIpChangeForCustomer(c)}
                             className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] px-2 py-1 rounded-lg flex items-center gap-1 shadow transition active:scale-95"
-                            title="Registrar cambio de IP/AP en campo para este cliente"
+                            title="Registrar cambio de IP/AP"
                           >
                             <Radio className="w-3.5 h-3.5" />
                             <span>Cambio IP</span>
@@ -656,7 +695,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                             <button
                               onClick={() => onOpenCreateVisitForCustomer(c)}
                               className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-[11px] px-2.5 py-1 rounded-lg flex items-center gap-1 shadow transition active:scale-95"
-                              title="Crear reporte técnico para este cliente"
+                              title="Crear reporte técnico"
                             >
                               <Ticket className="w-3.5 h-3.5" />
                               <span>Ticket</span>
@@ -672,12 +711,12 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           </div>
         </div>
       ) : (
-        /* VISTA DE TARJETAS GRID */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {customers.map((c, idx) => {
             const numOrdinal = (page - 1) * limit + idx + 1;
             const isAntena = c.tipo_servicio === 'Antena';
             const isSelected = selectedCustomerIds.includes(c.id);
+            const mapsUrl = getMapsUrl(c.coordenadas_gps);
 
             return (
               <div
@@ -727,6 +766,19 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                   </div>
                 </div>
 
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800/80 text-emerald-300 text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 font-bold transition"
+                  >
+                    <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Navegar Ubicación GPS (Google Maps)</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
                   <button
                     onClick={() => handleOpenIpChangeForCustomer(c)}
@@ -764,7 +816,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       )}
 
-      {/* Paginador Backend */}
+      {/* Paginador */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl">
         <div className="text-xs text-slate-400">
           Mostrando <strong className="text-white">{startRecord}</strong> - <strong className="text-white">{endRecord}</strong> de <strong className="text-white">{total}</strong> clientes
@@ -795,14 +847,14 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       </div>
 
-      {/* Modal Lote: Asignación Masiva a un Técnico */}
+      {/* Modal Lote: Asignación Masiva */}
       {showBatchModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Wrench className="w-5 h-5 text-sky-400" />
-                Asignación Masiva de Visitas ({selectedCustomerIds.length} Clientes)
+                Asignación Masiva ({selectedCustomerIds.length} Clientes)
               </h3>
               <button onClick={() => setShowBatchModal(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -812,49 +864,49 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
             <form onSubmit={handleSaveBatchVisits} className="space-y-3">
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
                 <strong className="text-white block text-sm">
-                  Lista de {selectedCustomerIds.length} Clientes Seleccionados
+                  {selectedCustomerIds.length} Clientes Seleccionados
                 </strong>
                 <p className="text-xs text-slate-400">
-                  Se generará una orden de visita individual para cada cliente y se enviarán directamente al técnico asignado.
+                  Se generará una orden de visita para cada cliente asignada al técnico seleccionado.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Técnico Asignado para la Región *</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Técnico Asignado *</label>
                 <select
                   required
                   value={batchFormData.tecnico_id}
                   onChange={(e) => setBatchFormData({ ...batchFormData, tecnico_id: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-sky-500 font-medium"
                 >
-                  <option value="">-- Selecciona el Técnico para esta zona --</option>
+                  <option value="">-- Selecciona el Técnico --</option>
                   {tecnicosList.map((t) => (
                     <option key={t.id} value={t.id}>
-                      👤 {t.nombre} ({t.region_asignada || 'Todas las regiones'})
+                      👤 {t.nombre} ({t.region_asignada || 'Todas'})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Prioridad del Lote</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Prioridad</label>
                 <select
                   value={batchFormData.prioridad}
                   onChange={(e) => setBatchFormData({ ...batchFormData, prioridad: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-sky-500 font-medium"
                 >
                   <option value="Normal">🟢 Normal</option>
-                  <option value="Urgente">🔴 Urgente (Atención Inmediata)</option>
+                  <option value="Urgente">🔴 Urgente</option>
                   <option value="Baja">🔵 Baja</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Motivo / Instrucciones de la Revisión *</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Motivo / Detalles *</label>
                 <textarea
                   rows={3}
                   required
-                  placeholder="Detalles sobre los problemas de señal, antenas desalineadas o mantenimiento masivo..."
+                  placeholder="Detalles sobre los problemas de señal..."
                   value={batchFormData.motivo_reporte}
                   onChange={(e) => setBatchFormData({ ...batchFormData, motivo_reporte: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 font-medium"
@@ -880,7 +932,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                       <span>Asignando...</span>
                     </>
                   ) : (
-                    <span>Enviar Ruta al Técnico</span>
+                    <span>Enviar Ruta</span>
                   )}
                 </button>
               </div>
@@ -889,7 +941,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       )}
 
-      {/* Modal Crear / Editar Cliente */}
+      {/* Modal Crear / Editar Cliente con Campo Coordenadas GPS / Google Maps Link */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
@@ -953,6 +1005,17 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
               </div>
 
               <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Ubicación GPS / Link Google Maps</label>
+                <input
+                  type="text"
+                  placeholder="Ej: https://maps.google.com/?q=20.285,-98.941 o 20.285,-98.941"
+                  value={formData.coordenadas_gps}
+                  onChange={(e) => setFormData({ ...formData, coordenadas_gps: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-emerald-400 font-mono focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">Plan de Velocidad</label>
                 <input
                   type="text"
@@ -964,7 +1027,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">Dirección / Ubicación</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Dirección Escrita</label>
                 <textarea
                   rows={2}
                   placeholder="Calle, Número, Colonia, Municipio..."
@@ -1002,7 +1065,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       )}
 
-      {/* Modal 2: Cambio Directo de IP / AP en Campo desde la Tabla */}
+      {/* Modal Cambio Directo IP */}
       {showIpModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
@@ -1061,7 +1124,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Nuevo AP / Sector (Opcional)</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Nuevo AP (Opcional)</label>
                   <input
                     type="text"
                     placeholder="Ej: AP-PiedraHongo-Sec2"
@@ -1111,7 +1174,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       )}
 
-      {/* Modal de Notificación */}
+      {/* Modal Notificación */}
       <NotificationModal
         isOpen={notification.isOpen}
         title={notification.title}

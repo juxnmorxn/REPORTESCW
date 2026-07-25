@@ -17,10 +17,12 @@ import {
   FileText,
   Building,
   UserCheck,
-  Loader2
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 
 import NotificationModal from './NotificationModal';
+import { getMapsUrl } from './CustomersManager';
 
 interface Visit {
   id: number;
@@ -39,6 +41,7 @@ interface Visit {
   cliente_plan?: string;
   cliente_region: string;
   cliente_direccion?: string;
+  cliente_coordenadas_gps?: string;
   tecnico_nombre?: string;
   creado_por_nombre?: string;
 }
@@ -141,7 +144,14 @@ export default function TechDashboard({ user }: TechDashboardProps) {
     }
   };
 
-  const openGoogleMaps = (direccion?: string, clienteNombre?: string) => {
+  const openGoogleMaps = (direccion?: string, clienteNombre?: string, gpsCoords?: string) => {
+    if (gpsCoords && gpsCoords.trim()) {
+      const mapsUrl = getMapsUrl(gpsCoords);
+      if (mapsUrl) {
+        window.open(mapsUrl, '_blank');
+        return;
+      }
+    }
     const query = encodeURIComponent(direccion || clienteNombre || '');
     window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
   };
@@ -319,10 +329,10 @@ export default function TechDashboard({ user }: TechDashboardProps) {
                         <span>{v.cliente_direccion}</span>
                       </p>
                       <button
-                        onClick={() => openGoogleMaps(v.cliente_direccion, v.cliente_nombre)}
-                        className="text-[11px] text-sky-400 hover:text-sky-300 bg-sky-950/60 border border-sky-800 px-2 py-1 rounded-lg shrink-0 flex items-center gap-1"
+                        onClick={() => openGoogleMaps(v.cliente_direccion, v.cliente_nombre, v.cliente_coordenadas_gps)}
+                        className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/80 border border-emerald-800 px-2 py-1 rounded-lg shrink-0 flex items-center gap-1 shadow transition"
                       >
-                        <MapPin className="w-3 h-3" /> Maps
+                        <MapPin className="w-3 h-3 text-emerald-400" /> GPS Maps
                       </button>
                     </div>
                   )}

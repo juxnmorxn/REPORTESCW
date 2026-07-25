@@ -24,9 +24,9 @@ export async function GET(request: Request) {
     const params: any[] = [];
 
     if (search.trim()) {
-      whereClause += ' AND (nombre LIKE ? OR ip LIKE ? OR direccion LIKE ? OR plan LIKE ?)';
+      whereClause += ' AND (nombre LIKE ? OR ip LIKE ? OR direccion LIKE ? OR plan LIKE ? OR coordenadas_gps LIKE ?)';
       const term = `%${search.trim()}%`;
-      params.push(term, term, term, term);
+      params.push(term, term, term, term, term);
     }
 
     if (region.trim() && region !== 'Todas') {
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado para crear clientes' }, { status: 403 });
     }
 
-    const { nombre, ip, tipo_servicio, plan, region, direccion, estado } = await request.json();
+    const { nombre, ip, tipo_servicio, plan, region, direccion, coordenadas_gps, estado } = await request.json();
 
     if (!nombre || !region) {
       return NextResponse.json({ error: 'Nombre y Región (Router) son obligatorios' }, { status: 400 });
@@ -98,8 +98,8 @@ export async function POST(request: Request) {
 
     const db = getDb();
     await db.execute({
-      sql: `INSERT INTO clientes (nombre, ip, tipo_servicio, plan, region, direccion, estado)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO clientes (nombre, ip, tipo_servicio, plan, region, direccion, coordenadas_gps, estado)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         nombre,
         ip || '',
@@ -107,6 +107,7 @@ export async function POST(request: Request) {
         plan || 'Estándar',
         region,
         direccion || '',
+        coordenadas_gps || '',
         estado || 'Activo',
       ],
     });
@@ -125,7 +126,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'No autorizado para editar clientes' }, { status: 403 });
     }
 
-    const { id, nombre, ip, tipo_servicio, plan, region, direccion, estado } = await request.json();
+    const { id, nombre, ip, tipo_servicio, plan, region, direccion, coordenadas_gps, estado } = await request.json();
 
     if (!id || !nombre || !region) {
       return NextResponse.json({ error: 'ID, Nombre y Región (Router) son obligatorios' }, { status: 400 });
@@ -134,7 +135,7 @@ export async function PUT(request: Request) {
     const db = getDb();
     await db.execute({
       sql: `UPDATE clientes 
-            SET nombre = ?, ip = ?, tipo_servicio = ?, plan = ?, region = ?, direccion = ?, estado = ?
+            SET nombre = ?, ip = ?, tipo_servicio = ?, plan = ?, region = ?, direccion = ?, coordenadas_gps = ?, estado = ?
             WHERE id = ?`,
       args: [
         nombre,
@@ -143,6 +144,7 @@ export async function PUT(request: Request) {
         plan || 'Estándar',
         region,
         direccion || '',
+        coordenadas_gps || '',
         estado || 'Activo',
         Number(id),
       ],
