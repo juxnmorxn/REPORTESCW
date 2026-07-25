@@ -14,6 +14,7 @@ import {
   LogOut, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
   Menu, 
   X,
   Ticket,
@@ -61,6 +62,9 @@ export default function AppLayout({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+
+  // Estado para desplegar subcategorías en el Sidebar
+  const [soporteExpanded, setSoporteExpanded] = useState(true);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -116,21 +120,6 @@ export default function AppLayout({
     }
   };
 
-  // Sub-pantallas según la categoría seleccionada
-  const getSubTabs = () => {
-    if (activeTab === 'soporte') {
-      return [
-        { id: 'visitas', label: 'Órdenes de Visita', icon: Activity, badge: stats?.totalVisitas },
-        { id: 'clientes', label: 'Directorio de Clientes', icon: Users, badge: stats?.totalClientes },
-        { id: 'cambios_ip', label: 'Bitácora Cambios IP / AP', icon: Radio },
-        { id: 'antenas', label: '📡 Antenas & APs (Topología)', icon: Radio },
-      ];
-    }
-    return [];
-  };
-
-  const currentSubTabs = getSubTabs();
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
       {/* OVERLAY MÓVIL */}
@@ -141,14 +130,14 @@ export default function AppLayout({
         />
       )}
 
-      {/* SIDEBAR LATERAL IZQUIERDO */}
+      {/* SIDEBAR LATERAL IZQUIERDO CON SUBCATEGORÍAS ANIDADAS */}
       <aside
         className={`fixed md:sticky top-0 z-50 h-screen bg-slate-900 border-r border-slate-800 flex flex-col justify-between transition-all duration-300 ${
-          collapsed ? 'w-16' : 'w-52'
+          collapsed ? 'w-16' : 'w-56'
         } ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         {/* Header Marca */}
-        <div>
+        <div className="overflow-y-auto">
           <div className={`p-3 border-b border-slate-800 flex items-center ${collapsed ? 'flex-col gap-2 p-2 justify-center' : 'justify-between'}`}>
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="p-2 bg-sky-600/20 border border-sky-500/30 rounded-xl text-sky-400 shrink-0">
@@ -173,111 +162,150 @@ export default function AppLayout({
             </button>
           </div>
 
-          {/* Menú de Navegación Módulos */}
+          {/* MENÚ DE NAVEGACIÓN ANIDADO CON SUBCATEGORÍAS */}
           <nav className="p-2 space-y-1">
-            {!collapsed ? (
-              <div className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Módulos Principales
-              </div>
-            ) : (
-              <div className="my-2 border-t border-slate-800/80" />
-            )}
+            {/* GRUPO 1: GESTIÓN DE SOPORTE & CAMPO (DESPLEGABLE) */}
+            <div>
+              {!collapsed ? (
+                <button
+                  onClick={() => setSoporteExpanded(!soporteExpanded)}
+                  className="w-full px-2.5 py-2 text-[11px] font-extrabold text-slate-400 hover:text-white uppercase tracking-wider flex items-center justify-between transition"
+                >
+                  <span>📋 Soporte & Campo</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${soporteExpanded ? 'rotate-180' : ''}`} />
+                </button>
+              ) : (
+                <div className="my-2 border-t border-slate-800/80" />
+              )}
 
-            {/* Opción 1: Gestión de Soporte */}
-            <button
-              onClick={() => {
-                setActiveTab('soporte');
-                if (setSubTab) setSubTab('visitas');
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center ${collapsed ? 'justify-center p-3' : 'justify-start px-3 py-2.5 gap-3'} rounded-xl font-bold text-xs transition ${
-                activeTab === 'soporte' && subTab === 'visitas'
-                  ? 'bg-sky-600 text-white shadow-lg shadow-sky-950'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-              }`}
-              title="Órdenes de Visita Técnica"
-            >
-              <Activity className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>Órdenes de Visita</span>}
-            </button>
+              {(soporteExpanded || collapsed) && (
+                <div className="space-y-1 pt-0.5">
+                  {/* Sub 1.1: Órdenes de Visita */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('soporte');
+                      if (setSubTab) setSubTab('visitas');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                      activeTab === 'soporte' && subTab === 'visitas'
+                        ? 'bg-sky-600 text-white shadow-md shadow-sky-950'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                    }`}
+                    title="Órdenes de Visita Técnica"
+                  >
+                    <Activity className="w-4 h-4 shrink-0 text-sky-400" />
+                    {!collapsed && (
+                      <div className="flex items-center justify-between w-full">
+                        <span>Órdenes de Visita</span>
+                        {stats?.totalVisitas !== undefined && (
+                          <span className="text-[10px] bg-slate-950/80 text-slate-300 px-1.5 py-0.2 rounded-full font-mono border border-slate-800">
+                            {stats.totalVisitas}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
 
-            {/* Opción 2: Directorio Directo Clientes */}
-            <button
-              onClick={() => {
-                setActiveTab('soporte');
-                if (setSubTab) setSubTab('clientes');
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center ${collapsed ? 'justify-center p-3' : 'justify-start px-3 py-2.5 gap-3'} rounded-xl font-bold text-xs transition ${
-                activeTab === 'soporte' && subTab === 'clientes'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-950'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-              }`}
-              title="Directorio de Clientes"
-            >
-              <Users className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>Directorio Clientes</span>}
-            </button>
+                  {/* Sub 1.2: Directorio de Clientes */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('soporte');
+                      if (setSubTab) setSubTab('clientes');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                      activeTab === 'soporte' && subTab === 'clientes'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                    }`}
+                    title="Directorio de Clientes"
+                  >
+                    <Users className="w-4 h-4 shrink-0 text-purple-400" />
+                    {!collapsed && (
+                      <div className="flex items-center justify-between w-full">
+                        <span>Directorio Clientes</span>
+                        {stats?.totalClientes !== undefined && (
+                          <span className="text-[10px] bg-slate-950/80 text-slate-300 px-1.5 py-0.2 rounded-full font-mono border border-slate-800">
+                            {stats.totalClientes}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </button>
 
-            {/* Opción 3: Bitácora Cambios IP / AP */}
-            <button
-              onClick={() => {
-                setActiveTab('soporte');
-                if (setSubTab) setSubTab('cambios_ip');
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center ${collapsed ? 'justify-center p-3' : 'justify-start px-3 py-2.5 gap-3'} rounded-xl font-bold text-xs transition ${
-                activeTab === 'soporte' && subTab === 'cambios_ip'
-                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-950'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-              }`}
-              title="Bitácora Cambios IP / AP"
-            >
-              <Radio className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>Bitácora Cambios IP</span>}
-            </button>
+                  {/* Sub 1.3: Bitácora Cambios IP / AP */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('soporte');
+                      if (setSubTab) setSubTab('cambios_ip');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                      activeTab === 'soporte' && subTab === 'cambios_ip'
+                        ? 'bg-amber-600 text-white shadow-md shadow-amber-950'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                    }`}
+                    title="Bitácora Cambios IP / AP"
+                  >
+                    <Radio className="w-4 h-4 shrink-0 text-amber-400" />
+                    {!collapsed && <span>Bitácora Cambios IP</span>}
+                  </button>
 
-            {/* Opción 4: Inventario Antenas & APs de Red */}
-            <button
-              onClick={() => {
-                setActiveTab('soporte');
-                if (setSubTab) setSubTab('antenas');
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center ${collapsed ? 'justify-center p-3' : 'justify-start px-3 py-2.5 gap-3'} rounded-xl font-bold text-xs transition ${
-                activeTab === 'soporte' && subTab === 'antenas'
-                  ? 'bg-sky-600 text-white shadow-lg shadow-sky-950'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-              }`}
-              title="Inventario Antenas & APs (Topología)"
-            >
-              <Radio className="w-5 h-5 shrink-0 text-sky-400" />
-              {!collapsed && <span>Antenas & APs (Red)</span>}
-            </button>
+                  {/* Sub 1.4: Inventario Antenas & APs de Red */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('soporte');
+                      if (setSubTab) setSubTab('antenas');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                      activeTab === 'soporte' && subTab === 'antenas'
+                        ? 'bg-sky-600 text-white shadow-md shadow-sky-950'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                    }`}
+                    title="Inventario Antenas & APs (Topología)"
+                  >
+                    <Radio className="w-4 h-4 shrink-0 text-sky-400 animate-pulse" />
+                    {!collapsed && <span>Antenas & APs (Red)</span>}
+                  </button>
+                </div>
+              )}
+            </div>
 
-            {/* Opción 4: Vista Técnico Campo */}
-            <button
-              onClick={() => {
-                setActiveTab('tecnico');
-                setMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center ${collapsed ? 'justify-center p-3' : 'justify-start px-3 py-2.5 gap-3'} rounded-xl font-bold text-xs transition ${
-                activeTab === 'tecnico'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-950'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-              }`}
-              title="Vista Técnico (Campo)"
-            >
-              <Wrench className="w-5 h-5 shrink-0" />
-              {!collapsed && <span>Técnico (Campo)</span>}
-            </button>
+            {/* GRUPO 2: TÉCNICO DE CAMPO */}
+            <div className="pt-2">
+              {!collapsed ? (
+                <div className="px-2.5 py-1 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  🔧 Módulo Técnico
+                </div>
+              ) : (
+                <div className="my-2 border-t border-slate-800/80" />
+              )}
 
-            {/* Módulos de Administración (SuperAdmin) */}
+              <button
+                onClick={() => {
+                  setActiveTab('tecnico');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start px-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                  activeTab === 'tecnico'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-950'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                }`}
+                title="Vista Técnico (Campo)"
+              >
+                <Wrench className="w-4 h-4 shrink-0 text-blue-400" />
+                {!collapsed && <span>Mis Visitas Asignadas</span>}
+              </button>
+            </div>
+
+            {/* GRUPO 3: ADMINISTRACIÓN (SUPERADMIN) */}
             {user.rol === 'SUPERADMIN' && (
-              <>
+              <div className="pt-2">
                 {!collapsed ? (
-                  <div className="px-3 pt-4 pb-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Administración
+                  <div className="px-2.5 py-1 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    ⚙️ Administración
                   </div>
                 ) : (
                   <div className="my-2 border-t border-slate-800/80" />
@@ -288,14 +316,14 @@ export default function AppLayout({
                     setActiveTab('usuarios');
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center ${collapsed ? 'justify-center p-3' : 'justify-start px-3 py-2.5 gap-3'} rounded-xl font-bold text-xs transition ${
+                  className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start px-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
                     activeTab === 'usuarios'
-                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-950'
+                      ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                   }`}
                   title="Gestión de Usuarios"
                 >
-                  <Shield className="w-5 h-5 shrink-0" />
+                  <Shield className="w-4 h-4 shrink-0 text-purple-400" />
                   {!collapsed && <span>Usuarios Sistema</span>}
                 </button>
 
@@ -304,58 +332,31 @@ export default function AppLayout({
                     setActiveTab('importar');
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center ${collapsed ? 'justify-center p-3' : 'justify-start px-3 py-2.5 gap-3'} rounded-xl font-bold text-xs transition ${
+                  className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start px-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
                     activeTab === 'importar'
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950'
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
                   }`}
-                  title="Importar WispHub Excel"
+                  title="Importación Masiva WispHub"
                 >
-                  <FileSpreadsheet className="w-5 h-5 shrink-0" />
+                  <FileSpreadsheet className="w-4 h-4 shrink-0 text-emerald-400" />
                   {!collapsed && <span>Importar WispHub</span>}
                 </button>
-              </>
+              </div>
             )}
           </nav>
         </div>
 
-        {/* Footer Sidebar Perfil Usuario y Toggle de Tema */}
-        <div className="p-2 border-t border-slate-800 space-y-2">
-          {/* Botón Switch Modo Día / Noche en Sidebar */}
-          <button
-            onClick={toggleTheme}
-            className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2'} rounded-xl text-xs font-bold transition border ${
-              theme === 'light'
-                ? 'bg-amber-100/80 text-amber-900 border-amber-300/70 hover:bg-amber-200/80'
-                : 'bg-slate-950 text-amber-300 border-slate-800 hover:bg-slate-800'
-            }`}
-            title={theme === 'light' ? 'Cambiar a Modo Noche Oscuro' : 'Cambiar a Modo Día Hueso Cálido'}
-          >
-            <div className="flex items-center gap-2">
-              {theme === 'light' ? (
-                <Sun className="w-4 h-4 text-amber-600 animate-spin-slow shrink-0" />
-              ) : (
-                <Moon className="w-4 h-4 text-amber-400 shrink-0" />
-              )}
-              {!collapsed && (
-                <span>{theme === 'light' ? 'Día (Hueso)' : 'Modo Noche'}</span>
-              )}
-            </div>
-            {!collapsed && (
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900/40 border border-current">
-                {theme === 'light' ? 'Luz Sol' : 'Dark'}
-              </span>
-            )}
-          </button>
-
-          <div className={`bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2 ${collapsed ? 'p-2 justify-center' : 'p-2.5'}`}>
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/40 text-purple-300 font-bold flex items-center justify-center shrink-0 text-xs">
-                {user.nombre.charAt(0)}
+        {/* Footer Usuario */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center font-bold text-purple-300 text-xs shrink-0">
+                {user.nombre ? user.nombre.charAt(0).toUpperCase() : 'U'}
               </div>
               {!collapsed && (
                 <div className="overflow-hidden">
-                  <div className="text-xs font-bold text-white truncate">{user.nombre}</div>
+                  <h3 className="font-bold text-xs text-white truncate leading-tight">{user.nombre}</h3>
                   <div className="mt-0.5">{getRoleBadge(user.rol)}</div>
                 </div>
               )}
@@ -374,65 +375,37 @@ export default function AppLayout({
         </div>
       </aside>
 
-      {/* ÁREA DE CONTENIDO PRINCIPAL CON HEADER NAVBAR DINÁMICO */}
+      {/* ÁREA DE CONTENIDO PRINCIPAL CON HEADER LIMPIO */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* TOP HEADER NAVBAR CON SUB-PESTAÑAS FLOTANTES */}
-        <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 p-3 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center justify-between sm:justify-start gap-3">
+        {/* TOP HEADER NAVBAR (LIMPIO Y OPTIMIZADO PARA MÓVILES) */}
+        <header className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 p-3 sm:px-6 flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 text-slate-300 hover:text-white bg-slate-800 rounded-xl border border-slate-700"
+              className="md:hidden p-2 text-slate-300 hover:text-white bg-slate-800 rounded-xl border border-slate-700 active:scale-95"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Sub-pestañas flotantes arriba si la categoría actual las tiene */}
-            {currentSubTabs.length > 0 ? (
-              <div className="bg-slate-950 border border-slate-800 p-1 rounded-2xl flex items-center gap-1 overflow-x-auto">
-                {currentSubTabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = subTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setSubTab && setSubTab(tab.id)}
-                      className={`py-2 px-3.5 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap ${
-                        isActive
-                          ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{tab.label}</span>
-                      {tab.badge !== undefined && tab.badge !== null && (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold transition border ${
-                          isActive 
-                            ? 'bg-white/25 text-white border-white/40' 
-                            : 'bg-slate-800/80 text-slate-300 border-slate-700/60'
-                        }`}>
-                          {tab.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div>
-                <h2 className="text-base font-extrabold text-white leading-tight">
-                  {activeTab === 'tecnico' && '🔧 Módulo Técnico de Campo'}
-                  {activeTab === 'usuarios' && '👥 Administración de Usuarios'}
-                  {activeTab === 'importar' && '📥 Importación Masiva WispHub'}
-                </h2>
-              </div>
-            )}
+            {/* Título y Badge de la Sección Actual */}
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-extrabold text-white leading-tight flex items-center gap-2">
+                {activeTab === 'soporte' && subTab === 'visitas' && '🎟️ Órdenes de Visita Técnica'}
+                {activeTab === 'soporte' && subTab === 'clientes' && '📋 Directorio de Clientes'}
+                {activeTab === 'soporte' && subTab === 'cambios_ip' && '🔄 Bitácora Cambios IP / AP'}
+                {activeTab === 'soporte' && subTab === 'antenas' && '📡 Antenas & APs (Topología de Red)'}
+                {activeTab === 'tecnico' && '🔧 Módulo Técnico de Campo'}
+                {activeTab === 'usuarios' && '👤 Gestión de Usuarios del Sistema'}
+                {activeTab === 'importar' && '📥 Importación Masiva WispHub'}
+              </h2>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* SWITCH PALETA DE COLORES DÍA / NOCHE EN NAVBAR */}
+            {/* SWITCH PALETA DE COLORES DÍA / NOCHE */}
             <button
               onClick={toggleTheme}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shadow-sm active:scale-95 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition shadow-sm active:scale-95 ${
                 theme === 'light'
                   ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
                   : 'bg-slate-950 text-amber-300 border-slate-800 hover:bg-slate-800'
@@ -442,31 +415,31 @@ export default function AppLayout({
               {theme === 'light' ? (
                 <>
                   <Sun className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>☀️ Día (Hueso)</span>
+                  <span className="hidden sm:inline">☀️ Día (Hueso)</span>
                 </>
               ) : (
                 <>
                   <Moon className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>🌙 Noche</span>
+                  <span className="hidden sm:inline">🌙 Noche</span>
                 </>
               )}
             </button>
 
-            <div className={`hidden lg:flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-xl border transition ${
+            {/* Estado Online / Offline */}
+            <div className={`flex items-center gap-2 text-xs font-medium px-2.5 py-1.5 rounded-xl border transition ${
               isOnline 
                 ? 'bg-slate-950 text-slate-300 border-slate-800' 
                 : 'bg-amber-950/80 text-amber-300 border-amber-800/80 animate-pulse font-bold'
             }`}>
               <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-              <span>{isOnline ? 'Turso Cloud Sync • Online' : '📡 Modo Offline (Señal de Campo)'}</span>
+              <span className="hidden lg:inline">{isOnline ? 'Turso Cloud Sync • Online' : '📡 Modo Offline (Señal de Campo)'}</span>
             </div>
 
             <button
               onClick={handleLogout}
-              className="md:hidden flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/30 text-xs px-3 py-1.5 rounded-xl font-medium"
+              className="md:hidden flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/30 text-xs px-2.5 py-1.5 rounded-xl font-medium"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Salir</span>
             </button>
           </div>
         </header>
