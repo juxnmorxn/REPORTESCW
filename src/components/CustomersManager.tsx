@@ -20,7 +20,12 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  UserCheck,
+  CheckSquare,
+  Square,
+  Wrench,
+  AlertTriangle
 } from 'lucide-react';
 import NotificationModal from './NotificationModal';
 
@@ -51,6 +56,10 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Selección de Clientes para Asignación Masiva
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
+  const [tecnicosList, setTecnicosList] = useState<{ id: number; nombre: string; region_asignada?: string }[]>([]);
 
   // Vista (Tabla vs Tarjetas)
   const [viewStyle, setViewStyle] = useState<'table' | 'grid'>('table');
@@ -93,6 +102,15 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
   });
   const [submittingIp, setSubmittingIp] = useState(false);
 
+  // Modal Asignación Masiva de Visitas por Lote a un Técnico
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchFormData, setBatchFormData] = useState({
+    tecnico_id: '',
+    prioridad: 'Normal',
+    motivo_reporte: 'Revisión masiva de antenas y mantenimientos en campo',
+  });
+  const [submittingBatch, setSubmittingBatch] = useState(false);
+
   // Modal Notificaciones
   const [notification, setNotification] = useState<{
     isOpen: boolean;
@@ -107,6 +125,18 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
   const notify = (message: string, type: 'error' | 'success' | 'info' | 'warning' = 'error', title?: string) => {
     setNotification({ isOpen: true, message, type, title });
   };
+
+  // Cargar lista de técnicos registrados
+  useEffect(() => {
+    fetch('/api/users')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.users) {
+          setTecnicosList(d.users.filter((u: any) => u.rol === 'TECNICO' || u.rol === 'SUPERADMIN'));
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   const cacheCustomersLocally = (data: Customer[]) => {
     try {
@@ -158,6 +188,23 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
   useEffect(() => {
     fetchCustomers();
   }, [search, filtroRegion, filtroTipo, filtroEstado, sortDir, page, limit]);
+
+  // Manejo de Selección de Clientes para Lote
+  const toggleSelectCustomer = (id: number) => {
+    setSelectedCustomerIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllOnPage = () => {
+    const currentIds = customers.map((c) => c.id);
+    const allSelected = currentIds.every((id) => selectedCustomerIds.includes(id));
+    if (allSelected) {
+      setSelectedCustomerIds((prev) => prev.filter((id) => !currentIds.includes(id)));
+    } else {
+      setSelectedCustomerIds((prev) => Array.from(new Set([...prev, ...currentIds])));
+    }
+  };
 
   const handleOpenNewModal = () => {
     setEditingCustomer(null);
@@ -223,18 +270,61 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         body: JSON.stringify(ipFormData),
       });
 
+      const data = await res.json();
       if (res.ok) {
         setShowIpModal(false);
         fetchCustomers();
         notify('Cambio de IP/AP registrado e historiado correctamente', 'success', 'Bitácora Actualizada');
       } else {
-        const data = await res.json();
         notify(data.error || 'Error al guardar cambio de IP', 'error');
       }
     } catch (err) {
       notify('Error de conexión', 'error');
     } finally {
       setSubmittingIp(false);
+    }
+  };
+
+  // Guardar Lote de Visitas Asignadas a un Técnico
+  const handleSaveBatchVisits = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedCustomerIds.length === 0) return;
+
+    if (!batchFormData.motivo_reporte.trim()) {
+      notify('Especifica el motivo o detalles de la revisión en campo.', 'warning');
+      return;
+    }
+
+    try {
+      setSubmittingBatch(true);
+      const res = await fetch('/api/visits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cliente_ids: selectedCustomerIds,
+          tecnico_id: batchFormData.tecnico_id ? Number(batchFormData.tecnico_id) : null,
+          prioridad: batchFormData.prioridad,
+          motivo_reporte: batchFormData.motivo_reporte,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setShowBatchModal(false);
+        const count = selectedCustomerIds.length;
+        setSelectedCustomerIds([]);
+        notify(
+          `Se crearon y enviaron ${count} órdenes de visita al técnico seleccionado.`,
+          'success',
+          'Lote de Mantenimiento Creado'
+        );
+      } else {
+        notify(data.error || 'Error al asignar el lote de visitas', 'error');
+      }
+    } catch (err) {
+      notify('Error de conexión', 'error');
+    } finally {
+      setSubmittingBatch(false);
     }
   };
 
@@ -275,6 +365,8 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
 
   const startRecord = (page - 1) * limit + 1;
   const endRecord = Math.min(page * limit, total);
+  const allCurrentPageSelected =
+    customers.length > 0 && customers.every((c) => selectedCustomerIds.includes(c.id));
 
   return (
     <div className="space-y-4 pb-20">
@@ -285,7 +377,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
             📋 Directorio General de Clientes ({total})
           </h2>
           <p className="text-xs text-slate-400">
-            Vista en lista numerada del 1 al {total || 'N'} con cambio directo de IP/AP y filtros en tiempo real.
+            Selección múltiple por lote para asignación masiva de revisiones a un técnico por región.
           </p>
         </div>
 
@@ -316,7 +408,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
 
           {/* Botón de Orden ASC / DESC */}
           <button
-            onClick={() => setSortDir(prev => (prev === 'ASC' ? 'DESC' : 'ASC'))}
+            onClick={() => setSortDir((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))}
             className="p-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition flex items-center gap-1.5"
             title={sortDir === 'ASC' ? 'Ordenando del 1 al N' : 'Ordenando del N al 1'}
           >
@@ -344,6 +436,47 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       </div>
 
+      {/* BANNER FLOTANTE DE ACCIÓN MASIVA DE LOTE CUANDO HAY SELECCIÓN */}
+      {selectedCustomerIds.length > 0 && (
+        <div className="bg-sky-950/90 border border-sky-500/50 p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl animate-pulse-red">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-sky-500/20 border border-sky-400/40 rounded-xl text-sky-300">
+              <CheckSquare className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-white text-sm flex items-center gap-2">
+                {selectedCustomerIds.length} Clientes Seleccionados para Revisión
+              </h3>
+              <p className="text-xs text-sky-300">
+                Puedes enviar esta lista de antenas con problema como un lote de trabajo a un solo técnico de región.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setSelectedCustomerIds([])}
+              className="px-3 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-900 rounded-xl border border-slate-700"
+            >
+              Desmarcar Todo
+            </button>
+            <button
+              onClick={() => {
+                setBatchFormData((prev) => ({
+                  ...prev,
+                  motivo_reporte: `Revisión masiva de antenas con señal deficiente (${selectedCustomerIds.length} clientes en región ${filtroRegion})`,
+                }));
+                setShowBatchModal(true);
+              }}
+              className="bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-xs px-4 py-2 rounded-xl shadow-lg flex items-center gap-1.5 transition active:scale-95"
+            >
+              <Wrench className="w-4 h-4" />
+              <span>Asignar Lote a un Técnico</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Barra de Búsqueda y Filtros Multicampo */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
         <div className="relative sm:col-span-2">
@@ -352,25 +485,36 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
             type="text"
             placeholder="Buscar por Nombre, IP, Plan o Dirección..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 font-medium"
           />
         </div>
 
         <select
           value={filtroRegion}
-          onChange={(e) => { setFiltroRegion(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setFiltroRegion(e.target.value);
+            setPage(1);
+          }}
           className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-500 font-medium"
         >
           <option value="Todas">Todas las Regiones ({regiones.length})</option>
           {regiones.map((r) => (
-            <option key={r} value={r}>{r}</option>
+            <option key={r} value={r}>
+              {r}
+            </option>
           ))}
         </select>
 
         <select
           value={filtroTipo}
-          onChange={(e) => { setFiltroTipo(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setFiltroTipo(e.target.value);
+            setPage(1);
+          }}
           className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-500 font-medium"
         >
           <option value="Todos">Todas las Tecnologías</option>
@@ -380,7 +524,10 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
 
         <select
           value={limit}
-          onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+          onChange={(e) => {
+            setLimit(Number(e.target.value));
+            setPage(1);
+          }}
           className="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-500 font-medium"
         >
           <option value={50}>50 por página</option>
@@ -403,13 +550,26 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           <p className="text-xs text-slate-500">Prueba ajustando los filtros de búsqueda o registra un nuevo cliente.</p>
         </div>
       ) : viewStyle === 'table' ? (
-        /* VISTA DE LISTA / TABLA DE ALTA DENSIDAD */
+        /* VISTA DE LISTA / TABLA DE ALTA DENSIDAD CON CHECKBOX MASIVO */
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-950/80 border-b border-slate-800 text-[11px] text-slate-400 uppercase font-bold tracking-wider">
-                  <th className="py-3 px-3 w-12 text-center">#</th>
+                  <th className="py-3 px-3 w-10 text-center">
+                    <button
+                      onClick={selectAllOnPage}
+                      className="text-slate-400 hover:text-white"
+                      title="Seleccionar todos los de esta página"
+                    >
+                      {allCurrentPageSelected ? (
+                        <CheckSquare className="w-4 h-4 text-sky-400" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="py-3 px-3 w-10 text-center">#</th>
                   <th className="py-3 px-4">Cliente / Nombre</th>
                   <th className="py-3 px-3">IP</th>
                   <th className="py-3 px-3">Tecnología</th>
@@ -423,8 +583,23 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
                 {customers.map((c, idx) => {
                   const numOrdinal = (page - 1) * limit + idx + 1;
                   const isAntena = c.tipo_servicio === 'Antena';
+                  const isSelected = selectedCustomerIds.includes(c.id);
+
                   return (
-                    <tr key={c.id} className="hover:bg-slate-800/40 transition">
+                    <tr
+                      key={c.id}
+                      className={`hover:bg-slate-800/40 transition ${
+                        isSelected ? 'bg-sky-950/40 font-bold' : ''
+                      }`}
+                    >
+                      <td className="py-2.5 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectCustomer(c.id)}
+                          className="w-4 h-4 rounded border-slate-700 text-sky-600 focus:ring-0 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-2.5 px-3 text-center text-slate-500 font-mono font-bold">{numOrdinal}</td>
                       <td className="py-2.5 px-4 font-bold text-white whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
@@ -502,17 +677,32 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           {customers.map((c, idx) => {
             const numOrdinal = (page - 1) * limit + idx + 1;
             const isAntena = c.tipo_servicio === 'Antena';
+            const isSelected = selectedCustomerIds.includes(c.id);
+
             return (
-              <div key={c.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 hover:border-purple-500/40 transition shadow-lg">
+              <div
+                key={c.id}
+                className={`bg-slate-900 border rounded-2xl p-4 space-y-3 transition shadow-lg ${
+                  isSelected ? 'border-sky-500 bg-sky-950/20' : 'border-slate-800 hover:border-purple-500/40'
+                }`}
+              >
                 <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-slate-500">#{numOrdinal}</span>
-                      <h3 className="font-bold text-white text-sm">{c.nombre}</h3>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectCustomer(c.id)}
+                      className="w-4 h-4 rounded border-slate-700 text-sky-600 focus:ring-0 cursor-pointer"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-slate-500">#{numOrdinal}</span>
+                        <h3 className="font-bold text-white text-sm">{c.nombre}</h3>
+                      </div>
+                      <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 mt-1 inline-block">
+                        {c.region}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 mt-1 inline-block">
-                      {c.region}
-                    </span>
                   </div>
 
                   {isAntena ? (
@@ -582,7 +772,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             disabled={page === 1}
             className="p-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-xl border border-slate-700 transition flex items-center gap-1"
           >
@@ -595,7 +785,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           </span>
 
           <button
-            onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
             disabled={page >= totalPages}
             className="p-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded-xl border border-slate-700 transition flex items-center gap-1"
           >
@@ -605,7 +795,101 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         </div>
       </div>
 
-      {/* Modal 1: Crear / Editar Cliente */}
+      {/* Modal Lote: Asignación Masiva a un Técnico */}
+      {showBatchModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Wrench className="w-5 h-5 text-sky-400" />
+                Asignación Masiva de Visitas ({selectedCustomerIds.length} Clientes)
+              </h3>
+              <button onClick={() => setShowBatchModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveBatchVisits} className="space-y-3">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+                <strong className="text-white block text-sm">
+                  Lista de {selectedCustomerIds.length} Clientes Seleccionados
+                </strong>
+                <p className="text-xs text-slate-400">
+                  Se generará una orden de visita individual para cada cliente y se enviarán directamente al técnico asignado.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Técnico Asignado para la Región *</label>
+                <select
+                  required
+                  value={batchFormData.tecnico_id}
+                  onChange={(e) => setBatchFormData({ ...batchFormData, tecnico_id: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-sky-500 font-medium"
+                >
+                  <option value="">-- Selecciona el Técnico para esta zona --</option>
+                  {tecnicosList.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      👤 {t.nombre} ({t.region_asignada || 'Todas las regiones'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Prioridad del Lote</label>
+                <select
+                  value={batchFormData.prioridad}
+                  onChange={(e) => setBatchFormData({ ...batchFormData, prioridad: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl p-2.5 focus:outline-none focus:border-sky-500 font-medium"
+                >
+                  <option value="Normal">🟢 Normal</option>
+                  <option value="Urgente">🔴 Urgente (Atención Inmediata)</option>
+                  <option value="Baja">🔵 Baja</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Motivo / Instrucciones de la Revisión *</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Detalles sobre los problemas de señal, antenas desalineadas o mantenimiento masivo..."
+                  value={batchFormData.motivo_reporte}
+                  onChange={(e) => setBatchFormData({ ...batchFormData, motivo_reporte: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-sky-500 font-medium"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowBatchModal(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingBatch}
+                  className="bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-sky-950 flex items-center gap-1.5"
+                >
+                  {submittingBatch ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Asignando...</span>
+                    </>
+                  ) : (
+                    <span>Enviar Ruta al Técnico</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Crear / Editar Cliente */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">

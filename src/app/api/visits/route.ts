@@ -117,26 +117,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No tienes permiso para crear órdenes de visita' }, { status: 403 });
     }
 
-    const { cliente_id, tecnico_id, prioridad, motivo_reporte } = await request.json();
+    const { cliente_id, cliente_ids, tecnico_id, prioridad, motivo_reporte } = await request.json();
 
-    if (!cliente_id || !motivo_reporte) {
-      return NextResponse.json({ error: 'El cliente y el motivo del reporte son obligatorios' }, { status: 400 });
+    if ((!cliente_id && (!cliente_ids || !Array.isArray(cliente_ids) || cliente_ids.length === 0)) || !motivo_reporte) {
+      return NextResponse.json({ error: 'Debes seleccionar al menos un cliente y especificar el motivo' }, { status: 400 });
     }
 
     const db = getDb();
-    await db.execute({
-      sql: `INSERT INTO visitas (cliente_id, tecnico_id, creado_por_id, estado_visita, prioridad, motivo_reporte)
-            VALUES (?, ?, ?, 'Pendiente', ?, ?)`,
-      args: [
-        cliente_id,
-        tecnico_id ? Number(tecnico_id) : null,
-        currentUser.id,
-        prioridad || 'Normal',
-        motivo_reporte,
-      ],
-    });
+    const idsToProcess: number[] = cliente_ids && Array.isArray(cliente_ids) && cliente_ids.length > 0
+      ? cliente_ids
+      : [cliente_id];
 
-    return NextResponse.json({ success: true, message: 'Orden de visita creada correctamente' });
+    for (const cId of idsToProcess) {
+      await db.execute({
+        sql: `INSERT INTO visitas (cliente_id, tecnico_id, creado_por_id, estado_visita, prioridad, motivo_reporte)
+              VALUES (?, ?, ?, 'Pendiente', ?, ?)`,
+        args: [
+          Number(cId),
+          tecnico_id ? Number(tecnico_id) : null,
+          currentUser.id,
+          prioridad || 'Normal',
+          motivo_reporte,
+        ],
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Se crearon y asignaron ${idsToProcess.length} órdenes de visita en lote al técnico correctamente.`,
+      count: idsToProcess.length,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
