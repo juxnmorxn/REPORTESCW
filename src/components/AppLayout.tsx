@@ -388,24 +388,24 @@ export default function AppLayout({
             </button>
 
             {/* Título y Badge de la Sección Actual */}
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-extrabold text-white leading-tight flex items-center gap-2">
-                {activeTab === 'soporte' && subTab === 'visitas' && '🎟️ Órdenes de Visita Técnica'}
-                {activeTab === 'soporte' && subTab === 'clientes' && '📋 Directorio de Clientes'}
-                {activeTab === 'soporte' && subTab === 'cambios_ip' && '🔄 Bitácora Cambios IP / AP'}
-                {activeTab === 'soporte' && subTab === 'antenas' && '📡 Antenas & APs (Topología de Red)'}
-                {activeTab === 'tecnico' && '🔧 Módulo Técnico de Campo'}
-                {activeTab === 'usuarios' && '👤 Gestión de Usuarios del Sistema'}
-                {activeTab === 'importar' && '📥 Importación Masiva WispHub'}
+            <div className="flex items-center gap-2 overflow-hidden">
+              <h2 className="text-xs sm:text-base font-extrabold text-white leading-tight truncate max-w-[150px] sm:max-w-none">
+                {activeTab === 'soporte' && subTab === 'visitas' && '🎟️ Visitas'}
+                {activeTab === 'soporte' && subTab === 'clientes' && '📋 Clientes'}
+                {activeTab === 'soporte' && subTab === 'cambios_ip' && '🔄 Bitácora IP'}
+                {activeTab === 'soporte' && subTab === 'antenas' && '📡 Antenas & APs'}
+                {activeTab === 'tecnico' && '🔧 Técnico'}
+                {activeTab === 'usuarios' && '👤 Usuarios'}
+                {activeTab === 'importar' && '📥 WispHub'}
               </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* SWITCH PALETA DE COLORES DÍA / NOCHE */}
             <button
               onClick={toggleTheme}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition shadow-sm active:scale-95 ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition shadow-sm active:scale-95 ${
                 theme === 'light'
                   ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
                   : 'bg-slate-950 text-amber-300 border-slate-800 hover:bg-slate-800'
@@ -414,12 +414,12 @@ export default function AppLayout({
             >
               {theme === 'light' ? (
                 <>
-                  <Sun className="w-4 h-4 text-amber-600 shrink-0" />
+                  <Sun className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span className="hidden sm:inline">☀️ Día (Hueso)</span>
                 </>
               ) : (
                 <>
-                  <Moon className="w-4 h-4 text-amber-400 shrink-0" />
+                  <Moon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span className="hidden sm:inline">🌙 Noche</span>
                 </>
               )}

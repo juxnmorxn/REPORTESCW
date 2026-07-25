@@ -299,39 +299,39 @@ export default function IpChangesManager({ user }: IpChangesManagerProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => window.print()}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-3 py-2.5 rounded-xl border border-slate-700 flex items-center gap-1.5 transition active:scale-95"
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-2.5 py-2 rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition active:scale-95"
             title="Exportar bitácora a PDF o Imprimir"
           >
-            <Printer className="w-4 h-4 text-purple-400" />
+            <Printer className="w-3.5 h-3.5 text-purple-400 shrink-0" />
             <span>Exportar PDF</span>
           </button>
 
           <button
             onClick={handleCopyPendientes}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-3 py-2.5 rounded-xl border border-slate-700 flex items-center gap-1.5 transition active:scale-95"
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-2.5 py-2 rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition active:scale-95"
             title="Copiar lista de cambios pendientes para WispHub"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            <span>{copied ? '¡Copiado!' : 'Copiar Pendientes WispHub'}</span>
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+            <span className="truncate">{copied ? '¡Copiado!' : 'Copiar WispHub'}</span>
           </button>
 
           <button
             onClick={fetchCambios}
             title="Refrescar lista"
-            className="p-2.5 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition"
+            className="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 transition flex items-center justify-center"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={handleOpenNewModal}
-            className="flex-1 sm:flex-none bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-950 transition active:scale-95"
+            className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-3 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-amber-950 transition active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            <span>Registrar Cambio IP/AP</span>
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="truncate">Nuevo Cambio IP/AP</span>
           </button>
         </div>
       </div>
