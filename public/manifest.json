@@ -1,0 +1,22 @@
+{
+  "short_name": "ISP PWA",
+  "name": "Gestión & Visitas ISP",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "display": "standalone",
+  "orientation": "portrait",
+  "description": "Sistema de gestión de tickets, soporte técnico y asignación de visitas para ISP."
+}

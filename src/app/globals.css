@@ -1,0 +1,300 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root.dark {
+  --bg-main: #090d16;
+  --bg-card: #0f172a;
+  --bg-card-hover: #1e293b;
+  --bg-sidebar: #0f172a;
+  --border-color: #1e293b;
+  --border-accent: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --input-bg: #020617;
+  --badge-bg: #1e293b;
+  --table-header: #020617;
+  --table-row-hover: rgba(30, 41, 59, 0.4);
+}
+
+:root.light {
+  --bg-main: #F6F3EC; /* Hueso Cálido Ivory */
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F0EAE1;
+  --bg-sidebar: #ECE5DA;
+  --border-color: #E2D9CC;
+  --border-accent: #D3C7B5;
+  --text-primary: #1C1917; /* Espresso de alto contraste para sol de oficina */
+  --text-secondary: #57534E;
+  --text-muted: #78716C;
+  --input-bg: #FFFFFF;
+  --badge-bg: #E7DFD3;
+  --table-header: #EBE4D8;
+  --table-row-hover: rgba(230, 222, 210, 0.5);
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ==========================================================================
+   REGLAS MODO DÍA CÁLIDO (HUESO / IVORY) - ALTO CONTRASTE OFICINA
+   ========================================================================== */
+html.light body,
+body.light,
+.light-mode,
+[data-theme="light"] body {
+  background-color: #F6F3EC !important;
+  color: #1C1917 !important;
+}
+
+html.light .bg-slate-950,
+body.light .bg-slate-950,
+.light-mode .bg-slate-950,
+[data-theme="light"] .bg-slate-950 {
+  background-color: #F6F3EC !important;
+  color: #1C1917 !important;
+}
+
+html.light .bg-slate-900,
+body.light .bg-slate-900,
+.light-mode .bg-slate-900,
+[data-theme="light"] .bg-slate-900 {
+  background-color: #FFFFFF !important;
+  color: #1C1917 !important;
+  border-color: #E2D9CC !important;
+  box-shadow: 0 4px 20px -2px rgba(120, 110, 95, 0.1) !important;
+}
+
+html.light .bg-slate-900\/95,
+body.light .bg-slate-900\/95,
+.light-mode .bg-slate-900\/95,
+html.light .bg-slate-900\/80,
+body.light .bg-slate-900\/80,
+.light-mode .bg-slate-900\/80,
+html.light .bg-slate-900\/50,
+body.light .bg-slate-900\/50,
+.light-mode .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: #E2D9CC !important;
+  color: #1C1917 !important;
+}
+
+html.light .bg-slate-800,
+body.light .bg-slate-800,
+.light-mode .bg-slate-800 {
+  background-color: #F0EAE1 !important;
+  color: #1C1917 !important;
+  border-color: #E2D9CC !important;
+}
+
+html.light .bg-slate-800\/80,
+body.light .bg-slate-800\/80,
+.light-mode .bg-slate-800\/80,
+html.light .bg-slate-800\/60,
+body.light .bg-slate-800\/60,
+.light-mode .bg-slate-800\/60,
+html.light .bg-slate-800\/40,
+body.light .bg-slate-800\/40,
+.light-mode .bg-slate-800\/40 {
+  background-color: #F0EAE1 !important;
+  color: #1C1917 !important;
+  border-color: #E2D9CC !important;
+}
+
+html.light .hover\:bg-slate-800:hover,
+body.light .hover\:bg-slate-800:hover,
+.light-mode .hover\:bg-slate-800:hover,
+html.light .hover\:bg-slate-800\/80:hover,
+body.light .hover\:bg-slate-800\/80:hover,
+.light-mode .hover\:bg-slate-800\/80:hover {
+  background-color: #E8E1D5 !important;
+}
+
+html.light .bg-slate-950\/80,
+body.light .bg-slate-950\/80,
+.light-mode .bg-slate-950\/80 {
+  background-color: #EBE4D8 !important;
+  color: #1C1917 !important;
+}
+
+html.light .border-slate-800,
+body.light .border-slate-800,
+.light-mode .border-slate-800 {
+  border-color: #E2D9CC !important;
+}
+
+html.light .border-slate-700,
+body.light .border-slate-700,
+.light-mode .border-slate-700 {
+  border-color: #D6CCBD !important;
+}
+
+/* Texto general en tarjetas/fondos claros */
+html.light .text-slate-100,
+body.light .text-slate-100,
+.light-mode .text-slate-100,
+html.light .text-white,
+body.light .text-white,
+.light-mode .text-white {
+  color: #1C1917 !important;
+}
+
+html.light .text-slate-200,
+body.light .text-slate-200,
+.light-mode .text-slate-200 {
+  color: #292524 !important;
+}
+
+html.light .text-slate-300,
+body.light .text-slate-300,
+.light-mode .text-slate-300 {
+  color: #44403C !important;
+}
+
+html.light .text-slate-400,
+body.light .text-slate-400,
+.light-mode .text-slate-400 {
+  color: #67625C !important;
+}
+
+html.light .text-slate-500,
+body.light .text-slate-500,
+.light-mode .text-slate-500 {
+  color: #78716C !important;
+}
+
+/* ==========================================================================
+   CORRECCIÓN CRÍTICA: TEXTO BLANCO LEGIBLE DENTRO DE BOTONES/BADGES ACTIVOS
+   ========================================================================== */
+html.light .bg-sky-600,
+html.light .bg-sky-600 *,
+html.light .bg-purple-600,
+html.light .bg-purple-600 *,
+html.light .bg-amber-600,
+html.light .bg-amber-600 *,
+html.light .bg-blue-600,
+html.light .bg-blue-600 *,
+html.light .bg-emerald-600,
+html.light .bg-emerald-600 *,
+html.light .bg-red-600,
+html.light .bg-red-600 *,
+html.light .bg-sky-500,
+html.light .bg-sky-500 *,
+html.light .bg-purple-500,
+html.light .bg-purple-500 *,
+html.light .bg-amber-500,
+html.light .bg-amber-500 *,
+html.light .bg-blue-500,
+html.light .bg-blue-500 *,
+html.light .bg-emerald-500,
+html.light .bg-emerald-500 * {
+  color: #FFFFFF !important;
+}
+
+/* Burbujas / Badges translúcidos dentro de botones activos */
+html.light .bg-white\/25,
+body.light .bg-white\/25,
+.light-mode .bg-white\/25 {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+html.light input,
+body.light input,
+.light-mode input,
+html.light select,
+body.light select,
+.light-mode select,
+html.light textarea,
+body.light textarea,
+.light-mode textarea {
+  background-color: #FFFFFF !important;
+  color: #1C1917 !important;
+  border-color: #D6CCBD !important;
+}
+
+html.light input::placeholder,
+body.light input::placeholder,
+.light-mode input::placeholder,
+html.light textarea::placeholder,
+body.light textarea::placeholder,
+.light-mode textarea::placeholder {
+  color: #9E978E !important;
+}
+
+html.light aside,
+body.light aside,
+.light-mode aside {
+  background-color: #EFE9DE !important;
+  border-color: #E0D6C7 !important;
+}
+
+html.light table th,
+body.light table th,
+.light-mode table th {
+  background-color: #EAE3D5 !important;
+  color: #44403C !important;
+  border-color: #D8CEBE !important;
+}
+
+html.light table tbody tr,
+body.light table tbody tr,
+.light-mode table tbody tr {
+  border-color: #E2D9CC !important;
+}
+
+html.light table tbody tr:hover,
+body.light table tbody tr:hover,
+.light-mode table tbody tr:hover {
+  background-color: #F0EAE0 !important;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+html.light ::-webkit-scrollbar-track,
+body.light ::-webkit-scrollbar-track,
+.light-mode ::-webkit-scrollbar-track {
+  background: #EFE9DE;
+}
+html.light ::-webkit-scrollbar-thumb,
+body.light ::-webkit-scrollbar-thumb,
+.light-mode ::-webkit-scrollbar-thumb {
+  background: #D6CCBD;
+}
+html.light ::-webkit-scrollbar-thumb:hover,
+body.light ::-webkit-scrollbar-thumb:hover,
+.light-mode ::-webkit-scrollbar-thumb:hover {
+  background: #C2B6A5;
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 1.8s infinite;
+}
