@@ -21,7 +21,8 @@ import {
   ArrowRight,
   Filter,
   Info,
-  Server
+  Server,
+  Settings
 } from 'lucide-react';
 import NotificationModal from './NotificationModal';
 import ConfirmModal from './ConfirmModal';
@@ -91,6 +92,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
     descripcion: '',
   });
   const [submittingVlan, setSubmittingVlan] = useState(false);
+  const [showManageVlansModal, setShowManageVlansModal] = useState(false);
 
   // New Client from IP Modal State
   const [assigningIpItem, setAssigningIpItem] = useState<IpItem | null>(null);
@@ -335,18 +337,19 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
           <div className="flex items-center gap-2 w-full md:w-auto">
             <button
               onClick={fetchIpInventory}
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition"
+              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 transition flex items-center gap-1.5 text-xs font-bold"
               title="Recargar inventario"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refrescar</span>
             </button>
 
             <button
-              onClick={handleOpenNewVlan}
-              className="flex-1 md:flex-none bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-95"
+              onClick={() => setShowManageVlansModal(true)}
+              className="flex-1 md:flex-none bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-95 shadow-md shadow-purple-950"
             >
-              <PlusCircle className="w-4 h-4" />
-              <span>Configurar Nueva VLAN</span>
+              <Settings className="w-4 h-4" />
+              <span>⚙️ Administrar VLANs</span>
             </button>
           </div>
         </div>
@@ -358,27 +361,27 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <span className="block text-[10px] font-bold text-slate-400 uppercase">VLANs Activas</span>
+              <span className="block text-[10px] font-bold text-slate-300 uppercase tracking-wide">VLANs Activas</span>
               <span className="text-lg font-black text-white font-mono">{summary.totalVlans}</span>
             </div>
           </div>
 
-          <div className="bg-emerald-950/30 border border-emerald-800/50 p-3 rounded-xl flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg">
+          <div className="bg-emerald-950/80 border border-emerald-700/60 p-3 rounded-xl flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <span className="block text-[10px] font-bold text-emerald-300 uppercase">IPs Disponibles</span>
+              <span className="block text-[10px] font-bold text-emerald-300 uppercase tracking-wide">IPs Disponibles</span>
               <span className="text-lg font-black text-emerald-400 font-mono">{summary.disponibles}</span>
             </div>
           </div>
 
-          <div className="bg-amber-950/30 border border-amber-800/50 p-3 rounded-xl flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg">
+          <div className="bg-amber-950/80 border border-amber-700/60 p-3 rounded-xl flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg">
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <span className="block text-[10px] font-bold text-amber-300 uppercase">IPs Ocupadas</span>
+              <span className="block text-[10px] font-bold text-amber-300 uppercase tracking-wide">IPs Ocupadas</span>
               <span className="text-lg font-black text-amber-400 font-mono">{summary.ocupadas}</span>
             </div>
           </div>
@@ -388,7 +391,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
               <Server className="w-5 h-5" />
             </div>
             <div>
-              <span className="block text-[10px] font-bold text-slate-400 uppercase">Total en Subred</span>
+              <span className="block text-[10px] font-bold text-slate-300 uppercase tracking-wide">Total en Subred</span>
               <span className="text-lg font-black text-white font-mono">{summary.totalIps}</span>
             </div>
           </div>
@@ -396,17 +399,17 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
       </div>
 
       {/* BARRA DE CONTROL, SELECCIÓN DE VLAN Y FILTROS */}
-      <div className="bg-slate-900 border border-slate-800 p-3 sm:p-4 rounded-2xl space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+      <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {/* Selector de VLAN */}
           <div className="sm:col-span-1">
-            <label className="block text-[11px] font-bold text-slate-400 mb-1">Filtrar por VLAN</label>
+            <label className="block text-[11px] font-bold text-slate-300 mb-1">🌐 Filtrar por Segmento VLAN</label>
             <select
               value={selectedVlanId}
               onChange={(e) => setSelectedVlanId(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-white text-xs font-bold rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-950 border border-slate-700 text-white text-xs font-bold rounded-xl px-3 py-2.5 focus:outline-none focus:border-sky-500"
             >
-              <option value="todas">🌐 Todas las VLANs ({summary.totalVlans})</option>
+              <option value="todas">🌐 Mostrar Todas las VLANs ({summary.totalVlans})</option>
               {vlans.map((v) => (
                 <option key={v.id} value={String(v.vlan_id)}>
                   VLAN {v.vlan_id} — {v.nombre} ({v.rango_red})
@@ -417,15 +420,15 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
 
           {/* Toggle de Estado (Disponibles / Ocupadas / Todas) */}
           <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold text-slate-400 mb-1">Estado de Direcciones IP</label>
+            <label className="block text-[11px] font-bold text-slate-300 mb-1">Estado de Direcciones IP</label>
             <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => setStatusFilter('disponibles')}
-                className={`py-1.5 px-2 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 ${
                   statusFilter === 'disponibles'
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -435,10 +438,10 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
               <button
                 type="button"
                 onClick={() => setStatusFilter('ocupadas')}
-                className={`py-1.5 px-2 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 ${
                   statusFilter === 'ocupadas'
-                    ? 'bg-amber-600 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-amber-600 text-white shadow-md shadow-amber-950'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
@@ -448,10 +451,10 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
               <button
                 type="button"
                 onClick={() => setStatusFilter('todas')}
-                className={`py-1.5 px-2 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 ${
                   statusFilter === 'todas'
-                    ? 'bg-purple-600 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
+                    : 'text-slate-300 hover:text-white'
                 }`}
               >
                 <span>Todas ({summary.totalIps})</span>
@@ -461,64 +464,19 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
 
           {/* Buscador Rápido */}
           <div className="sm:col-span-1">
-            <label className="block text-[11px] font-bold text-slate-400 mb-1">Buscar IP o Cliente</label>
+            <label className="block text-[11px] font-bold text-slate-300 mb-1">🔍 Búsqueda Rápida</label>
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
               <input
                 type="text"
-                placeholder="Ej: 172.19.1.45 o 'Hotel'..."
+                placeholder="Ej: 172.19.1.45 o 'Cliente'..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 border border-slate-700 text-white text-xs font-bold rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:border-sky-500 placeholder-slate-500"
               />
             </div>
           </div>
         </div>
-
-        {/* LISTADO DE VLANS CONFIGURADAS (PÍDOLA CON BOTONES DE EDICIÓN PARA ADMIN) */}
-        {vlans.length > 0 && (
-          <div className="pt-2 border-t border-slate-800/60">
-            <span className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">
-              Segmentos VLAN Registrados:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {vlans.map((v) => (
-                <div
-                  key={v.id}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-bold border flex items-center gap-2 transition ${
-                    selectedVlanId === String(v.vlan_id)
-                      ? 'bg-sky-950 text-sky-200 border-sky-500'
-                      : 'bg-slate-950 text-slate-300 border-slate-800'
-                  }`}
-                >
-                  <span
-                    className="cursor-pointer"
-                    onClick={() => setSelectedVlanId(selectedVlanId === String(v.vlan_id) ? 'todas' : String(v.vlan_id))}
-                  >
-                    VLAN <strong className="text-sky-400 font-mono">{v.vlan_id}</strong> ({v.rango_red})
-                  </span>
-
-                  <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-slate-800">
-                    <button
-                      onClick={() => handleOpenEditVlan(v)}
-                      className="text-slate-400 hover:text-white transition"
-                      title="Editar rango VLAN"
-                    >
-                      <Edit3 className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteVlan(v)}
-                      className="text-slate-400 hover:text-red-400 transition"
-                      title="Eliminar VLAN"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* GRID / LISTA DE RESULTADOS DE IPS */}
@@ -856,6 +814,108 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE GESTIÓN Y ADMINISTRACIÓN DE VLANS */}
+      {showManageVlansModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl">
+                  <Settings className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-white">Administración de Segmentos VLAN</h3>
+                  <p className="text-xs text-slate-400">Configura, edita o elimina rangos de red guardados en la BD.</p>
+                </div>
+              </div>
+
+              <button onClick={() => setShowManageVlansModal(false)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-xs font-bold text-slate-300">VLANs Configuradas ({vlans.length})</span>
+              <button
+                onClick={() => {
+                  setShowManageVlansModal(false);
+                  handleOpenNewVlan();
+                }}
+                className="bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>➕ Agregar VLAN</span>
+              </button>
+            </div>
+
+            {vlans.length === 0 ? (
+              <div className="p-6 text-center bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                <p className="text-xs text-slate-400">No hay VLANs configuradas en la base de datos.</p>
+                <button
+                  onClick={() => {
+                    setShowManageVlansModal(false);
+                    handleOpenNewVlan();
+                  }}
+                  className="px-3 py-1.5 bg-purple-600 text-white text-xs font-bold rounded-xl"
+                >
+                  Crear Primera VLAN
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                {vlans.map((v) => (
+                  <div
+                    key={v.id}
+                    className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-xs text-white">VLAN {v.vlan_id} — {v.nombre}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        Rango: <strong className="text-sky-400">{v.rango_red}</strong> {v.gateway && `• Gateway: ${v.gateway}`}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => {
+                          setShowManageVlansModal(false);
+                          handleOpenEditVlan(v);
+                        }}
+                        className="p-2 text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700 transition flex items-center gap-1 text-xs font-bold"
+                        title="Editar VLAN"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="hidden sm:inline">Editar</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteVlan(v)}
+                        className="p-2 text-slate-300 hover:text-red-400 bg-slate-900 hover:bg-slate-800 rounded-lg border border-slate-700 transition flex items-center gap-1 text-xs font-bold"
+                        title="Eliminar VLAN"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                        <span className="hidden sm:inline">Eliminar</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t border-slate-800">
+              <button
+                onClick={() => setShowManageVlansModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
