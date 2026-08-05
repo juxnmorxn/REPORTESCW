@@ -1,0 +1,129 @@
+================================================================================
+          DOCUMENTACIÓN TÉCNICA Y MANUAL DE FUNCIONES DEL SISTEMA
+                   ISP CONTROL PWA - VERSIÓN 1.0 (PRODUCCIÓN)
+================================================================================
+
+1. INFORMACIÓN GENERAL DEL SISTEMA Y ARQUITECTURA
+--------------------------------------------------------------------------------
+Nombre del Sistema: ISP Control PWA - Sistema Integrado de Gestión Técnica, 
+                   Bitácora & Mantenimiento de Campo
+Propósito: Plataforma web Progresiva (PWA) de alto rendimiento diseñada para
+           ISPs (Proveedores de Servicio de Internet). Permite administrar el
+           directorio de clientes, topología de red, órdenes de visita técnica,
+           bitácora de cambios de IP/AP y rutas de mantenimiento en campo con o 
+           sin conexión a Internet.
+
+Especificaciones Técnicas:
+  - Framework Base: Next.js 15.5 (App Router) + React 19.
+  - Lenguaje: TypeScript 5+.
+  - Estilos & UI: TailwindCSS con sistema de temas dual (Modo Noche & Modo Día Hueso Cálido #F6F3EC).
+  - Base de Datos Distribuida: LibSQL / Turso Cloud SQLite con réplica local.
+  - Motor Offline PWA: Service Worker v3 + Cache Storage + IndexedDB / LocalStorage.
+  - Compatibilidad PWA: Instalable en Android, iOS, Windows y macOS.
+
+
+2. ESTRUCTURA DE ROLES Y PERMISOS DE ACCESO
+--------------------------------------------------------------------------------
+[1] SUPERADMIN (Administrador General del ISP):
+    - Acceso total a todos los módulos y configuraciones.
+    - Creación, edición, activación/desactivación y reseteo de contraseñas de usuarios.
+    - Asignación de regiones y especialidades a técnicos.
+    - Importación Masiva de bases de datos desde plantillas de Excel de WispHub.
+    - Gestión completa del directorio de clientes, antenas, bitácora de IPs y tickets.
+
+[2] SOPORTE (Mesa de Ayuda / Operador de Atención a Clientes):
+    - Registro y edición de clientes y sus parámetros de servicio.
+    - Creación de tickets y órdenes de visita técnica.
+    - Asignación individual y asignación masiva por lote a un técnico específico por región.
+    - Registro de reconfiguraciones en la Bitácora de Cambios de IP y AP.
+    - Exportación de reportes PDF con filtros de región y fechas.
+
+[3] TECNICO (Cuadrillas de Campo / Mantenimiento de Red):
+    - Interfaz táctil simplificada y optimizada para dispositivos móviles (smartphones).
+    - Visualización de la ruta diaria de trabajo asignada por región o especialidad (Antena / Fibra).
+    - Botón de Navegación GPS Directo a Google Maps / Waze con 1 solo clic.
+    - Diagnóstico en sitio y cambio de estado del ticket (Pendiente -> En Proceso -> Completada).
+
+
+3. DESGLOSE DETALLADO DE MÓDULOS Y PANTALLAS
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+MÓDULO 1: ÓRDENES DE VISITA TÉCNICA & TICKETS (SupportDashboard.tsx)
+--------------------------------------------------------------------------------
+  - Panel de Control con indicadores de visitas Pendientes, En Proceso y Completadas.
+  - Filtros multicampo: por Estado, por Tecnología (📡 Antena / 🔌 Fibra), por Región/Router y por Técnico asignado.
+  - Creación rápida de tickets de soporte asociados a un cliente específico.
+  - Asignación de nivel de prioridad (🟢 Normal, 🔴 Urgente, 🔵 Baja).
+  - Registro de motivo del reporte e instrucciones para la cuadrilla.
+
+--------------------------------------------------------------------------------
+MÓDULO 2: DIRECTORIO GENERAL DE CLIENTES (CustomersManager.tsx)
+--------------------------------------------------------------------------------
+  - Visualización Dual: Tabla de Alta Densidad (50 a 500 registros por página) y Vista de Tarjetas Grid.
+  - Selección Múltiple por Lote [x]: Permite seleccionar varios clientes con problemas en una misma región y enviarlos como un lote de mantenimiento a un técnico específico en 1 solo clic.
+  - Búsqueda Instantánea En Línea y Fuera de Línea (Offline): Filtra inmediatamente por Nombre, IP, Plan, Dirección o GPS.
+  - Botón de Navegación GPS Directa: Enlace directo a Google Maps con icono de ubicación que abre la ruta en el celular del técnico.
+  - Cambio de IP / AP en 1-Clic: Modal rápido para registrar reconfiguraciones de campo directamente desde la tabla de clientes.
+  - Selector de Ordenamiento Humano: Permite cambiar el orden entre "⬆️ Primero -> Último" (1 al N) y "⬇️ Último -> Primero" (N al 1).
+
+--------------------------------------------------------------------------------
+MÓDULO 3: BITÁCORA DE CAMBIOS DE IP Y AP EN CAMPO (IpChangesManager.tsx)
+--------------------------------------------------------------------------------
+  - Registro histórico de todas las modificaciones de IP y antenas realizadas en campo.
+  - Motor Anti-Colisión de IPs: Valida en tiempo real que la nueva IP ingresada no esté actualmente ocupada por otro cliente de la base de datos.
+  - Estatus de Sincronización WispHub: Marca visualmente los cambios como "Pendiente de aplicar en WispHub" o "Sincronizado".
+  - Copiado en 1-Clic para WispHub: Copia al portapapeles el lote de cambios pendientes en formato de lista para actualizar el sistema principal.
+  - Exportación a PDF Profesional: Genera un documento PDF limpio de la bitácora respetando los filtros activos de Región, Estado o Búsqueda.
+
+--------------------------------------------------------------------------------
+MÓDULO 4: INVENTARIO DE ANTENAS & APS DE RED - TOPOLOGÍA (AntennasTopologyManager.tsx)
+--------------------------------------------------------------------------------
+  - Registro e inventario de APs de transmisión de infraestructura (Ubiquiti, Mikrotik, Cambium, etc.) que no pertenecen a un cliente individual.
+  - Campos detallados: Nombre del AP, IP de Gestión, Región/Router, Modelo de Equipo, Usuario y Contraseña.
+  - Seguridad de Credenciales: Botón de visibilidad (👁️/👁️‍🗨️) para consultar contraseñas de gestión en campo de forma segura.
+  - Relación de Topología "Conectado A": Permite especificar el Router, Torre o Puerto al que se conecta cada antena para armar el mapa de red.
+
+--------------------------------------------------------------------------------
+MÓDULO 5: VISTA MÓVIL DEL TÉCNICO EN CAMPO (TechDashboard.tsx)
+--------------------------------------------------------------------------------
+  - Interfaz de usuario "Mobile-First" diseñada para operar con una sola mano en campo.
+  - Pestañas de filtrado rápido por tecnología: "Todos", "📡 Antena", "🔌 Fibra".
+  - Botón verde táctil "📍 GPS Maps": Abre automáticamente la ubicación exacta del cliente en Google Maps en el smartphone del técnico.
+  - Modal de Cierre de Ticket: Permite redactar el diagnóstico técnico del trabajo realizado y marcar la visita como Completada.
+
+--------------------------------------------------------------------------------
+MÓDULO 6: GESTIÓN DE USUARIOS DEL SISTEMA (AdminDashboard.tsx)
+--------------------------------------------------------------------------------
+  - Registro de personal técnico y operadores de soporte.
+  - Asignación de Región / Router atendido por el técnico.
+  - Asignación de Especialidad (Antena / Fibra / Ambos).
+  - Interruptor de Estado Activo / Inactivo para revocar accesos al sistema inmediatamente.
+
+--------------------------------------------------------------------------------
+MÓDULO 7: IMPORTACIÓN MASIVA WISPHUB
+--------------------------------------------------------------------------------
+  - Carga masiva de bases de datos desde archivos Excel (.xlsx / .csv) exportados de WispHub.
+  - Limpieza y normalización automática de nombres, direcciones IP, regiones y planes.
+
+
+4. TECNOLOGÍA OFFLINE Y SEGURIDAD DE SESIÓN
+--------------------------------------------------------------------------------
+  - Service Worker v3 con Arranque en Frío (Cold-Start Engine):
+    Permite abrir la aplicación desde las Apps recientes del teléfono aunque no haya internet ni datos móviles. Pre-carga la interfaz completa desde la memoria interna.
+  - Cola de Sincronización Diferida:
+    Las acciones registradas sin señal se guardan en la memoria local y se transmiten automáticamente a Turso Cloud tan pronto como el dispositivo recupera señal.
+  - Autenticación Deslizante de 30 Días:
+    Mantiene la sesión iniciada en el dispositivo durante 30 días sin solicitar contraseña en cada entrada, facilitando el trabajo de las cuadrillas en campo.
+
+
+5. PALETAS DE COLOR DE ALTO CONSTRASTE
+--------------------------------------------------------------------------------
+  - Modo Noche Oscuro (Dark Theme):
+    Fondo slate-950 de alta elegancia con contrastes púrpura, azul y ámbar para reducir la fatiga visual en trabajo nocturno.
+  - Modo Día Hueso Cálido (Light Theme #F6F3EC):
+    Paleta de tonos hueso cálidos con texto oscuro de alto contraste diseñado específicamente para facilitar la lectura bajo la luz directa del sol en campo.
+
+================================================================================
+               FIN DEL REPORTE DE DOCUMENTACIÓN - ISP CONTROL PWA V1.0
+================================================================================

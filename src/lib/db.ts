@@ -108,6 +108,33 @@ export async function initDb() {
     );
   `);
 
+  // Crear Tabla de VLANs y Rangos de Red
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS vlans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      vlan_id INTEGER UNIQUE NOT NULL,
+      rango_red TEXT NOT NULL,
+      gateway TEXT DEFAULT '',
+      descripcion TEXT DEFAULT '',
+      creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Verificar e insertar VLANs por defecto si la tabla está vacía
+  const vlanCheck = await db.execute('SELECT COUNT(*) as count FROM vlans');
+  if (Number(vlanCheck.rows[0].count) === 0) {
+    await db.execute({
+      sql: `INSERT INTO vlans (nombre, vlan_id, rango_red, gateway, descripcion) VALUES
+        ('VLAN 510 - Zona Actopan Principal', 510, '172.19.1.0/24', '172.19.1.1', 'Segmento IP para clientes VLAN 510'),
+        ('VLAN 520 - Zona Rincón Antenas', 520, '172.19.2.0/24', '172.19.2.1', 'Segmento IP para clientes VLAN 520'),
+        ('VLAN 530 - OLT Fibra Óptica', 530, '172.19.3.0/24', '172.19.3.1', 'Segmento Fibra Óptica VLAN 530'),
+        ('VLAN 10 - Red Rincón 192.168.10.x', 10, '192.168.10.0/24', '192.168.10.1', 'Red Antena Rincón 192.168.10.x'),
+        ('VLAN 20 - Red Actopan 192.168.20.x', 20, '192.168.20.0/24', '192.168.20.1', 'Red Fibra Actopan 192.168.20.x')`,
+      args: [],
+    });
+  }
+
   // Verificar si existe el usuario SUPERADMIN por defecto
   const existingAdmin = await db.execute({
     sql: 'SELECT id FROM usuarios WHERE email_o_usuario = ?',

@@ -23,6 +23,7 @@ import NotificationModal from './NotificationModal';
 import CustomersManager from './CustomersManager';
 import IpChangesManager from './IpChangesManager';
 import AntennasTopologyManager from './AntennasTopologyManager';
+import VlanIpManager from './VlanIpManager';
 
 interface Visit {
   id: number;
@@ -86,7 +87,7 @@ interface SupportDashboardProps {
 }
 
 export default function SupportDashboard({ user, subTab }: SupportDashboardProps) {
-  const [viewMode, setViewMode] = useState<'visitas' | 'clientes' | 'cambios_ip' | 'antenas'>((subTab as any) || 'visitas');
+  const [viewMode, setViewMode] = useState<'visitas' | 'clientes' | 'cambios_ip' | 'antenas' | 'vlans'>((subTab as any) || 'visitas');
 
   useEffect(() => {
     if (subTab) {
@@ -299,6 +300,8 @@ export default function SupportDashboard({ user, subTab }: SupportDashboardProps
         <IpChangesManager user={user} />
       ) : viewMode === 'antenas' ? (
         <AntennasTopologyManager user={user} />
+      ) : viewMode === 'vlans' ? (
+        <VlanIpManager user={user} />
       ) : (
         <>
           {/* Action Bar Header */}

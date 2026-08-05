@@ -21,7 +21,8 @@ import {
   Search,
   RefreshCw,
   Sun,
-  Moon
+  Moon,
+  Network
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { processOfflineQueue } from '@/lib/offlineDb';
@@ -269,6 +270,24 @@ export default function AppLayout({
                     <Radio className="w-4 h-4 shrink-0 text-sky-400 animate-pulse" />
                     {!collapsed && <span>Antenas & APs (Red)</span>}
                   </button>
+
+                  {/* Sub 1.5: Gestor de IPs & VLANs */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('soporte');
+                      if (setSubTab) setSubTab('vlans');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                      activeTab === 'soporte' && subTab === 'vlans'
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                    }`}
+                    title="Gestor e Inventario de IPs y VLANs"
+                  >
+                    <Network className="w-4 h-4 shrink-0 text-emerald-400 animate-pulse" />
+                    {!collapsed && <span>Gestor IPs & VLANs</span>}
+                  </button>
                 </div>
               )}
             </div>
@@ -394,6 +413,7 @@ export default function AppLayout({
                 {activeTab === 'soporte' && subTab === 'clientes' && '📋 Clientes'}
                 {activeTab === 'soporte' && subTab === 'cambios_ip' && '🔄 Bitácora IP'}
                 {activeTab === 'soporte' && subTab === 'antenas' && '📡 Antenas & APs'}
+                {activeTab === 'soporte' && subTab === 'vlans' && '🌐 Gestor IPs & VLANs'}
                 {activeTab === 'tecnico' && '🔧 Técnico'}
                 {activeTab === 'usuarios' && '👤 Usuarios'}
                 {activeTab === 'importar' && '📥 WispHub'}
