@@ -543,26 +543,26 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
             return (
               <div
                 key={`${item.vlan_id}-${item.ip}`}
-                className={`bg-slate-900 border rounded-2xl p-3.5 flex flex-col justify-between transition hover:border-slate-700 relative overflow-hidden ${
+                className={`bg-slate-900 border rounded-2xl p-4 flex flex-col justify-between transition relative overflow-hidden ${
                   isDisponible
-                    ? 'border-emerald-900/60 bg-emerald-950/10'
+                    ? 'border-emerald-600/40 bg-slate-900'
                     : 'border-slate-800 bg-slate-900'
                 }`}
               >
                 {/* Decorative status top line */}
                 <div
-                  className={`absolute top-0 left-0 right-0 h-1 ${
-                    isDisponible ? 'bg-emerald-500' : 'bg-amber-500/70'
+                  className={`absolute top-0 left-0 right-0 h-1.5 ${
+                    isDisponible ? 'bg-emerald-500' : 'bg-amber-500'
                   }`}
                 />
 
-                <div className="space-y-2 pt-1">
+                <div className="space-y-3 pt-1">
                   {/* IP and VLAN Badge Header */}
                   <div className="flex items-center justify-between gap-1">
-                    <span className="text-base font-black text-white font-mono tracking-tight flex items-center gap-1.5">
+                    <span className="text-lg font-black text-white font-mono tracking-tight flex items-center gap-1.5">
                       {item.ip}
                     </span>
-                    <span className="text-[10px] font-extrabold bg-slate-950 text-slate-300 border border-slate-800 px-2 py-0.5 rounded-md font-mono">
+                    <span className="text-[11px] font-black bg-slate-950 text-slate-200 border border-slate-700 px-2.5 py-0.5 rounded-lg font-mono">
                       VLAN {item.vlan_id}
                     </span>
                   </div>
@@ -570,46 +570,42 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                   {/* Estado Badge */}
                   <div>
                     {isDisponible ? (
-                      <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
+                      <span className="inline-flex items-center gap-1.5 bg-emerald-950/90 text-emerald-300 border border-emerald-600/60 text-xs px-2.5 py-1 rounded-lg font-black">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        🟢 IP Libre / Disponible
+                        Disponible
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] px-2.5 py-0.5 rounded-full font-bold">
+                      <span className="inline-flex items-center gap-1.5 bg-amber-950/90 text-amber-300 border border-amber-600/60 text-xs px-2.5 py-1 rounded-lg font-black">
                         <span className="w-2 h-2 rounded-full bg-amber-400" />
-                        🔴 Asignada a Cliente
+                        Ocupada
                       </span>
                     )}
                   </div>
 
                   {/* Customer Information if Occupied */}
-                  {!isDisponible ? (
-                    <div className="mt-2 p-2.5 bg-slate-950 rounded-xl border border-slate-800/80 space-y-1">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase block">Cliente Actual:</span>
+                  {!isDisponible && (
+                    <div className="mt-2 p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">Cliente:</span>
                       <h4 className="font-extrabold text-xs text-white leading-snug">{item.cliente_nombre}</h4>
-                      <p className="text-[11px] text-slate-400 flex items-center gap-1">
+                      <p className="text-[11px] text-slate-300 flex items-center gap-1 font-medium">
                         <span>{item.cliente_tipo_servicio === 'Antena' ? '📡 Antena' : '🔌 Fibra'}</span>
                         <span>• {item.cliente_region || 'N/A'}</span>
                       </p>
                       {item.cliente_plan && (
-                        <p className="text-[10px] text-sky-400 font-medium">Plan: {item.cliente_plan}</p>
+                        <p className="text-[10px] text-sky-400 font-bold">Plan: {item.cliente_plan}</p>
                       )}
-                    </div>
-                  ) : (
-                    <div className="mt-2 p-2.5 bg-emerald-950/20 border border-emerald-900/40 rounded-xl text-[11px] text-emerald-300 font-medium">
-                      ✓ Lista para asignar a un cliente nuevo o realizar cambio de IP.
                     </div>
                   )}
                 </div>
 
                 {/* Footer Action Buttons */}
-                <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-1.5">
+                <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                   <button
                     onClick={() => handleCopyIp(item.ip)}
-                    className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
+                    className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 ${
                       copiedIp === item.ip
                         ? 'bg-emerald-600 text-white border-emerald-500'
-                        : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-800'
+                        : 'bg-slate-950 hover:bg-slate-800 text-slate-200 border-slate-700'
                     }`}
                     title="Copiar IP al portapapeles"
                   >
@@ -620,8 +616,8 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copiar IP</span>
+                        <Copy className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Copiar</span>
                       </>
                     )}
                   </button>
@@ -629,18 +625,18 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                   {isDisponible ? (
                     <button
                       onClick={() => handleOpenAssignCustomer(item)}
-                      className="py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition flex items-center gap-1 active:scale-95"
-                      title="Asignar IP a un cliente nuevo"
+                      className="flex-1 py-2 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 active:scale-95 shadow-md shadow-emerald-950"
+                      title="Asignar o Usar IP para un cliente"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>Asignar</span>
+                      <span>Usar IP</span>
                     </button>
                   ) : (
                     <button
                       onClick={() => handleCopyIp(item.ip)}
-                      className="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 transition flex items-center gap-1"
+                      className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 transition flex items-center gap-1"
                     >
-                      <span>Ver Info</span>
+                      <span>Info</span>
                     </button>
                   )}
                 </div>
