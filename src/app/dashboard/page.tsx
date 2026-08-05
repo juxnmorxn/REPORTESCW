@@ -6,21 +6,22 @@ import AdminDashboard from '@/components/AdminDashboard';
 export default async function DashboardPage() {
   const user = await getCurrentUser();
 
-  // Fallback to active Admin session if no login cookie is present
+  // Guest session for unauthenticated visitors (only VLAN & IP manager accessible for security)
   const activeUser = user || {
-    id: 1,
-    nombre: 'Super Administrador',
-    email_o_usuario: 'admin',
-    rol: 'SUPERADMIN' as const,
-    region_asignada: 'Todas',
-    especialidad: 'Ambos' as const,
+    id: 0,
+    nombre: 'Consulta Libre VLANs',
+    email_o_usuario: 'invitado',
+    rol: 'INVITADO' as any,
+    isGuest: true,
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {activeUser.rol === 'SUPERADMIN' && <AdminDashboard user={activeUser} />}
-      {activeUser.rol === 'SOPORTE' && <AdminDashboard user={activeUser} />}
-      {activeUser.rol === 'TECNICO' && <TechDashboard user={activeUser} />}
+      {activeUser.rol === 'TECNICO' ? (
+        <TechDashboard user={activeUser} />
+      ) : (
+        <AdminDashboard user={activeUser} />
+      )}
 
       <PWAInstallPrompt />
     </div>

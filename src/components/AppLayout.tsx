@@ -22,7 +22,9 @@ import {
   RefreshCw,
   Sun,
   Moon,
-  Network
+  Network,
+  LogIn,
+  Lock
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { processOfflineQueue } from '@/lib/offlineDb';
@@ -32,9 +34,10 @@ interface AppLayoutProps {
     id: number;
     nombre: string;
     email_o_usuario: string;
-    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO';
+    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO' | 'INVITADO';
     region_asignada?: string;
     especialidad?: string;
+    isGuest?: boolean;
   };
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -116,6 +119,12 @@ export default function AppLayout({
             <Wrench className="w-3 h-3" /> TÉCNICO
           </span>
         );
+      case 'INVITADO':
+        return (
+          <span className="inline-flex items-center gap-1 bg-slate-800 text-slate-300 border border-slate-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
+            🌐 MODO LIBRE
+          </span>
+        );
       default:
         return null;
     }
@@ -181,97 +190,102 @@ export default function AppLayout({
 
               {(soporteExpanded || collapsed) && (
                 <div className="space-y-1 pt-0.5">
-                  {/* Sub 1.1: Órdenes de Visita */}
-                  <button
-                    onClick={() => {
-                      setActiveTab('soporte');
-                      if (setSubTab) setSubTab('visitas');
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
-                      activeTab === 'soporte' && subTab === 'visitas'
-                        ? 'bg-sky-600 text-white shadow-md shadow-sky-950'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-                    }`}
-                    title="Órdenes de Visita Técnica"
-                  >
-                    <Activity className="w-4 h-4 shrink-0 text-sky-400" />
-                    {!collapsed && (
-                      <div className="flex items-center justify-between w-full">
-                        <span>Órdenes de Visita</span>
-                        {stats?.totalVisitas !== undefined && (
-                          <span className="text-[10px] bg-slate-950/80 text-slate-300 px-1.5 py-0.2 rounded-full font-mono border border-slate-800">
-                            {stats.totalVisitas}
-                          </span>
+                  {/* SOLO VISIBLE SI ESTÁ AUTENTICADO */}
+                  {user.rol !== 'INVITADO' && (
+                    <>
+                      {/* Sub 1.1: Órdenes de Visita */}
+                      <button
+                        onClick={() => {
+                          setActiveTab('soporte');
+                          if (setSubTab) setSubTab('visitas');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                          activeTab === 'soporte' && subTab === 'visitas'
+                            ? 'bg-sky-600 text-white shadow-md shadow-sky-950'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                        }`}
+                        title="Órdenes de Visita Técnica"
+                      >
+                        <Activity className="w-4 h-4 shrink-0 text-sky-400" />
+                        {!collapsed && (
+                          <div className="flex items-center justify-between w-full">
+                            <span>Órdenes de Visita</span>
+                            {stats?.totalVisitas !== undefined && (
+                              <span className="text-[10px] bg-slate-950/80 text-slate-300 px-1.5 py-0.2 rounded-full font-mono border border-slate-800">
+                                {stats.totalVisitas}
+                              </span>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    )}
-                  </button>
+                      </button>
 
-                  {/* Sub 1.2: Directorio de Clientes */}
-                  <button
-                    onClick={() => {
-                      setActiveTab('soporte');
-                      if (setSubTab) setSubTab('clientes');
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
-                      activeTab === 'soporte' && subTab === 'clientes'
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-                    }`}
-                    title="Directorio de Clientes"
-                  >
-                    <Users className="w-4 h-4 shrink-0 text-purple-400" />
-                    {!collapsed && (
-                      <div className="flex items-center justify-between w-full">
-                        <span>Directorio Clientes</span>
-                        {stats?.totalClientes !== undefined && (
-                          <span className="text-[10px] bg-slate-950/80 text-slate-300 px-1.5 py-0.2 rounded-full font-mono border border-slate-800">
-                            {stats.totalClientes}
-                          </span>
+                      {/* Sub 1.2: Directorio de Clientes */}
+                      <button
+                        onClick={() => {
+                          setActiveTab('soporte');
+                          if (setSubTab) setSubTab('clientes');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                          activeTab === 'soporte' && subTab === 'clientes'
+                            ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                        }`}
+                        title="Directorio de Clientes"
+                      >
+                        <Users className="w-4 h-4 shrink-0 text-purple-400" />
+                        {!collapsed && (
+                          <div className="flex items-center justify-between w-full">
+                            <span>Directorio Clientes</span>
+                            {stats?.totalClientes !== undefined && (
+                              <span className="text-[10px] bg-slate-950/80 text-slate-300 px-1.5 py-0.2 rounded-full font-mono border border-slate-800">
+                                {stats.totalClientes}
+                              </span>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    )}
-                  </button>
+                      </button>
 
-                  {/* Sub 1.3: Bitácora Cambios IP / AP */}
-                  <button
-                    onClick={() => {
-                      setActiveTab('soporte');
-                      if (setSubTab) setSubTab('cambios_ip');
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
-                      activeTab === 'soporte' && subTab === 'cambios_ip'
-                        ? 'bg-amber-600 text-white shadow-md shadow-amber-950'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-                    }`}
-                    title="Bitácora Cambios IP / AP"
-                  >
-                    <Radio className="w-4 h-4 shrink-0 text-amber-400" />
-                    {!collapsed && <span>Bitácora Cambios IP</span>}
-                  </button>
+                      {/* Sub 1.3: Bitácora Cambios IP / AP */}
+                      <button
+                        onClick={() => {
+                          setActiveTab('soporte');
+                          if (setSubTab) setSubTab('cambios_ip');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                          activeTab === 'soporte' && subTab === 'cambios_ip'
+                            ? 'bg-amber-600 text-white shadow-md shadow-amber-950'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                        }`}
+                        title="Bitácora Cambios IP / AP"
+                      >
+                        <Radio className="w-4 h-4 shrink-0 text-amber-400" />
+                        {!collapsed && <span>Bitácora Cambios IP</span>}
+                      </button>
 
-                  {/* Sub 1.4: Inventario Antenas & APs de Red */}
-                  <button
-                    onClick={() => {
-                      setActiveTab('soporte');
-                      if (setSubTab) setSubTab('antenas');
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
-                      activeTab === 'soporte' && subTab === 'antenas'
-                        ? 'bg-sky-600 text-white shadow-md shadow-sky-950'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-                    }`}
-                    title="Inventario Antenas & APs (Topología)"
-                  >
-                    <Radio className="w-4 h-4 shrink-0 text-sky-400 animate-pulse" />
-                    {!collapsed && <span>Antenas & APs (Red)</span>}
-                  </button>
+                      {/* Sub 1.4: Inventario Antenas & APs de Red */}
+                      <button
+                        onClick={() => {
+                          setActiveTab('soporte');
+                          if (setSubTab) setSubTab('antenas');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start pl-4 pr-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                          activeTab === 'soporte' && subTab === 'antenas'
+                            ? 'bg-sky-600 text-white shadow-md shadow-sky-950'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                        }`}
+                        title="Inventario Antenas & APs (Topología)"
+                      >
+                        <Radio className="w-4 h-4 shrink-0 text-sky-400 animate-pulse" />
+                        {!collapsed && <span>Antenas & APs (Red)</span>}
+                      </button>
+                    </>
+                  )}
 
-                  {/* Sub 1.5: Gestor de IPs & VLANs */}
+                  {/* Sub 1.5: Gestor de IPs & VLANs (SIEMPRE ACCESIBLE LIBREMENTE) */}
                   <button
                     onClick={() => {
                       setActiveTab('soporte');
@@ -292,32 +306,34 @@ export default function AppLayout({
               )}
             </div>
 
-            {/* GRUPO 2: TÉCNICO DE CAMPO */}
-            <div className="pt-2">
-              {!collapsed ? (
-                <div className="px-2.5 py-1 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
-                  🔧 Módulo Técnico
-                </div>
-              ) : (
-                <div className="my-2 border-t border-slate-800/80" />
-              )}
+            {/* GRUPO 2: TÉCNICO DE CAMPO (SOLO SI TIENE ROL) */}
+            {user.rol !== 'INVITADO' && (
+              <div className="pt-2">
+                {!collapsed ? (
+                  <div className="px-2.5 py-1 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                    🔧 Módulo Técnico
+                  </div>
+                ) : (
+                  <div className="my-2 border-t border-slate-800/80" />
+                )}
 
-              <button
-                onClick={() => {
-                  setActiveTab('tecnico');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start px-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
-                  activeTab === 'tecnico'
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-950'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-                }`}
-                title="Vista Técnico (Campo)"
-              >
-                <Wrench className="w-4 h-4 shrink-0 text-blue-400" />
-                {!collapsed && <span>Mis Visitas Asignadas</span>}
-              </button>
-            </div>
+                <button
+                  onClick={() => {
+                    setActiveTab('tecnico');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center ${collapsed ? 'justify-center p-2.5' : 'justify-start px-3 py-2 gap-2.5'} rounded-xl font-bold text-xs transition ${
+                    activeTab === 'tecnico'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-950'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
+                  }`}
+                  title="Vista Técnico (Campo)"
+                >
+                  <Wrench className="w-4 h-4 shrink-0 text-blue-400" />
+                  {!collapsed && <span>Mis Visitas Asignadas</span>}
+                </button>
+              </div>
+            )}
 
             {/* GRUPO 3: ADMINISTRACIÓN (SUPERADMIN) */}
             {user.rol === 'SUPERADMIN' && (
@@ -455,12 +471,26 @@ export default function AppLayout({
               <span className="hidden lg:inline">{isOnline ? 'Turso Cloud Sync • Online' : '📡 Modo Offline (Señal de Campo)'}</span>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="md:hidden flex items-center gap-1.5 bg-red-500/10 text-red-400 border border-red-500/30 text-xs px-2.5 py-1.5 rounded-xl font-medium"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
+            {/* BOTÓN DE SESIÓN */}
+            {user.rol === 'INVITADO' ? (
+              <button
+                onClick={() => router.push('/login')}
+                className="bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl border border-sky-500/50 flex items-center gap-1.5 transition active:scale-95"
+                title="Iniciar Sesión con Usuario y Contraseña"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">🔑 Iniciar Sesión</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 text-xs px-3 py-1.5 rounded-xl font-bold transition"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Cerrar Sesión</span>
+              </button>
+            )}
           </div>
         </header>
 

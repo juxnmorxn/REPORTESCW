@@ -47,21 +47,21 @@ function resolveRowData(row: Record<string, any>, headerMap: Record<string, stri
 
 export async function POST(request: Request) {
   try {
-    await initDb();
-    const currentUser = await getCurrentUser();
-
-    if (!currentUser || currentUser.rol !== 'SUPERADMIN') {
-      return NextResponse.json(
-        { error: 'Acceso denegado. Solo el SUPERADMIN puede importar archivos de WispHub.' },
-        { status: 403 }
-      );
-    }
-
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const clearBefore = formData.get('clearBefore') === 'true';
 
     if (!file) {
-      return NextResponse.json({ error: 'No se ha adjuntado ningún archivo Excel' }, { status: 400 });
+      return NextResponse.json({ error: 'No se ha adjuntado ningún archivo CSV o Excel' }, { status: 400 });
+    }
+
+    const db = getDb();
+
+    // Si se solicitó limpiar la BD antes de importar
+    if (clearBefore) {
+      await db.execute('DELETE FROM visitas');
+      await db.execute('DELETE FROM cambios_ip');
+      await db.execute('DELETE FROM clientes');
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const rawData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet);
 
     if (rawData.length === 0) {
-      return NextResponse.json({ error: 'El archivo Excel está vacío o no contiene filas de datos' }, { status: 400 });
+      return NextResponse.json({ error: 'El archivo CSV/Excel está vacío o no contiene filas de datos' }, { status: 400 });
     }
 
     const headerMap = buildHeaderMap(rawData[0]);
@@ -85,9 +85,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    const db = getDb();
-
     // 1. Cargar clientes existentes en memoria para deduplicación ultra-rápida
     const existingRes = await db.execute('SELECT id, ip, nombre, region FROM clientes');
 

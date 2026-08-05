@@ -171,26 +171,5 @@ export async function initDb() {
       args: ['María Rodríguez (Soporte)', 'soporte', hashedSupport, 'SOPORTE', 'Todas', 'Ambos'],
     });
 
-    // Agregar clientes de demostración si está vacía
-    const clientCheck = await db.execute('SELECT COUNT(*) as count FROM clientes');
-    if (Number(clientCheck.rows[0].count) === 0) {
-      await db.execute({
-        sql: `INSERT INTO clientes (nombre, ip, tipo_servicio, plan, region, direccion, estado) VALUES
-          ('Ferretería El Sol', '192.168.10.45', 'Antena', 'Plan 10M Antena', 'RB-Rinkon', 'Av. Hidalgo 102, Rincón', 'Activo'),
-          ('Clínica Actopan', '192.168.20.12', 'Fibra', 'Plan 50M Fibra', 'RB-OLT-Actopan', 'Calle Juárez 45, Actopan', 'Activo'),
-          ('Hotel Real', '192.168.20.88', 'Fibra', 'Plan 100M Fibra Dedicated', 'RB-OLT-Actopan', 'Blvd. Principal 500, Actopan', 'Activo'),
-          ('Tienda La Bendición', '192.168.10.19', 'Antena', 'Plan 5M Antena', 'RB-Rinkon', 'Calle 5 de Mayo 12, Rincón', 'Activo')`,
-        args: [],
-      });
-
-      // Agregar visitas de demostración
-      await db.execute({
-        sql: `INSERT INTO visitas (cliente_id, tecnico_id, creado_por_id, estado_visita, prioridad, motivo_reporte) VALUES
-          (1, 3, 4, 'Pendiente', 'Urgente', 'Antena desalineada tras fuertes vientos. Cliente sin servicio.'),
-          (2, 2, 4, 'En Proceso', 'Normal', 'Revisión de Atenuación en Roseta óptima. Pérdida intermitente.'),
-          (4, 3, 4, 'Pendiente', 'Normal', 'Cambio de contraseña de Router WiFi')`,
-        args: [],
-      });
-    }
   }
 }

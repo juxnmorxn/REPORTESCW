@@ -23,9 +23,11 @@ import {
   Square,
   Wrench,
   MapPin,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import NotificationModal from './NotificationModal';
+import ConfirmModal from './ConfirmModal';
 
 interface Customer {
   id: number;
@@ -44,7 +46,7 @@ interface CustomersManagerProps {
     id: number;
     nombre: string;
     email_o_usuario: string;
-    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO';
+    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO' | 'INVITADO';
   };
   onOpenCreateVisitForCustomer?: (customer: Customer) => void;
 }
@@ -119,6 +121,23 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
     motivo_reporte: 'Revisión masiva de antenas y mantenimientos en campo',
   });
   const [submittingBatch, setSubmittingBatch] = useState(false);
+
+  // Modal Confirmación
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    type?: 'danger' | 'success' | 'warning';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: '',
+    type: 'danger',
+    onConfirm: () => {},
+  });
 
   // Modal Notificaciones
   const [notification, setNotification] = useState<{
@@ -391,6 +410,32 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
     }
   };
 
+  const handleClearDatabase = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: '¿Vaciar Base de Datos de Clientes?',
+      message: '¿Estás seguro de que deseas eliminar TODOS los clientes registrados? Esta acción dejará la base de datos completamente limpia para cargar tu nuevo CSV/Excel.',
+      confirmText: 'Sí, Vaciar Clientes',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/customers/clear', { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok) {
+            fetchCustomers();
+            notify(data.message || 'Base de datos vaciada con éxito', 'success', '¡BD de Clientes Limpia!');
+          } else {
+            notify(data.error || 'Error al vaciar base de datos', 'error');
+          }
+        } catch (err) {
+          notify('Error de conexión con el servidor', 'error');
+        } finally {
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
+
   const startRecord = (page - 1) * limit + 1;
   const endRecord = Math.min(page * limit, total);
   const allCurrentPageSelected =
@@ -399,7 +444,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
   return (
     <div className="space-y-4 pb-20">
       {/* Header Resumen y Acciones */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
         <div>
           <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
             📋 Directorio General de Clientes ({total})
@@ -409,12 +454,21 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleClearDatabase}
+            className="p-2.5 text-xs font-bold text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-950/70 border border-red-800/60 rounded-xl transition flex items-center gap-1.5"
+            title="Vaciar tabla de clientes para nueva importación CSV/Excel"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Vaciar BD</span>
+          </button>
+
           <div className="bg-slate-950 border border-slate-800 p-1 rounded-xl flex items-center gap-1">
             <button
               onClick={() => setViewStyle('table')}
               className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
-                viewStyle === 'table' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                viewStyle === 'table' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title="Vista de Lista"
             >
@@ -424,7 +478,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
             <button
               onClick={() => setViewStyle('grid')}
               className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
-                viewStyle === 'grid' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
+                viewStyle === 'grid' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title="Vista de Tarjetas"
             >
@@ -439,7 +493,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
             title={sortDir === 'ASC' ? 'Ordenando del primer cliente registrado al último' : 'Ordenando del último cliente registrado al primero'}
           >
             <ArrowUpDown className="w-3.5 h-3.5 text-purple-400" />
-            <span>{sortDir === 'ASC' ? '⬆️ Primero ➔ Último' : '⬇️ Último ➔ Primero'}</span>
+            <span>{sortDir === 'ASC' ? '⬆️ Primero' : '⬇️ Último'}</span>
           </button>
 
           <button
@@ -453,7 +507,7 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
           {(user.rol === 'SUPERADMIN' || user.rol === 'SOPORTE') && (
             <button
               onClick={handleOpenNewModal}
-              className="flex-1 sm:flex-none bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-950 transition active:scale-95"
+              className="flex-1 sm:flex-none bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>Nuevo Cliente</span>
@@ -1181,6 +1235,17 @@ export default function CustomersManager({ user, onOpenCreateVisitForCustomer }:
         message={notification.message}
         type={notification.type}
         onClose={() => setNotification((prev) => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Modal Confirmación */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        type={confirmModal.type}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

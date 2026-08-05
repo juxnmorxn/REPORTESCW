@@ -54,7 +54,7 @@ interface VlanIpManagerProps {
     id: number;
     nombre: string;
     email_o_usuario: string;
-    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO';
+    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO' | 'INVITADO';
     region_asignada?: string;
   };
   initialVlanId?: string;
@@ -314,7 +314,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
   return (
     <div className="space-y-5 pb-16">
       {/* HEADER PRINCIPAL Y ESTADÍSTICAS EN CABECERA */}
-      <div className="bg-slate-900 border border-slate-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-4">
+      <div className="bg-slate-900 border border-slate-800 p-4 sm:p-5 rounded-2xl space-y-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -344,7 +344,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
             {(user.rol === 'SUPERADMIN' || user.rol === 'SOPORTE') && (
               <button
                 onClick={handleOpenNewVlan}
-                className="flex-1 md:flex-none bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-purple-950 flex items-center justify-center gap-2 transition active:scale-95"
+                className="flex-1 md:flex-none bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-95"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span>Configurar Nueva VLAN</span>
@@ -398,7 +398,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
       </div>
 
       {/* BARRA DE CONTROL, SELECCIÓN DE VLAN Y FILTROS */}
-      <div className="bg-slate-900 border border-slate-800 p-3 sm:p-4 rounded-2xl shadow-md space-y-3">
+      <div className="bg-slate-900 border border-slate-800 p-3 sm:p-4 rounded-2xl space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
           {/* Selector de VLAN */}
           <div className="sm:col-span-1">
@@ -426,7 +426,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                 onClick={() => setStatusFilter('disponibles')}
                 className={`py-1.5 px-2 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 ${
                   statusFilter === 'disponibles'
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-950'
+                    ? 'bg-emerald-600 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -439,7 +439,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                 onClick={() => setStatusFilter('ocupadas')}
                 className={`py-1.5 px-2 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 ${
                   statusFilter === 'ocupadas'
-                    ? 'bg-amber-600 text-white shadow-md shadow-amber-950'
+                    ? 'bg-amber-600 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -452,7 +452,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                 onClick={() => setStatusFilter('todas')}
                 className={`py-1.5 px-2 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 ${
                   statusFilter === 'todas'
-                    ? 'bg-purple-600 text-white shadow-md shadow-purple-950'
+                    ? 'bg-purple-600 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -547,7 +547,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
             return (
               <div
                 key={`${item.vlan_id}-${item.ip}`}
-                className={`bg-slate-900 border rounded-2xl p-3.5 shadow-md flex flex-col justify-between transition hover:border-slate-700 relative overflow-hidden ${
+                className={`bg-slate-900 border rounded-2xl p-3.5 flex flex-col justify-between transition hover:border-slate-700 relative overflow-hidden ${
                   isDisponible
                     ? 'border-emerald-900/60 bg-emerald-950/10'
                     : 'border-slate-800 bg-slate-900'
@@ -633,7 +633,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                   {isDisponible ? (
                     <button
                       onClick={() => handleOpenAssignCustomer(item)}
-                      className="py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-950 transition flex items-center gap-1 active:scale-95"
+                      className="py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-extrabold transition flex items-center gap-1 active:scale-95"
                       title="Asignar IP a un cliente nuevo"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
@@ -657,7 +657,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
       {/* MODAL CONFIGURAR NUEVA / EDITAR VLAN */}
       {showVlanModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                 <Network className="w-5 h-5 text-purple-400" />
@@ -742,7 +742,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                 <button
                   type="submit"
                   disabled={submittingVlan}
-                  className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-purple-950 flex items-center gap-1.5"
+                  className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5"
                 >
                   {submittingVlan ? (
                     <>
@@ -762,7 +762,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
       {/* MODAL PARA ASIGNAR IP DISPONIBLE A NUEVO CLIENTE */}
       {assigningIpItem && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-emerald-400" />
@@ -851,7 +851,7 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                 <button
                   type="submit"
                   disabled={submittingNewCust}
-                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-950 flex items-center gap-1.5"
+                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5"
                 >
                   {submittingNewCust ? (
                     <>

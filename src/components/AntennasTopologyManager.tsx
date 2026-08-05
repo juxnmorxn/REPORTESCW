@@ -43,7 +43,7 @@ interface AntennasTopologyManagerProps {
     id: number;
     nombre: string;
     email_o_usuario: string;
-    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO';
+    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO' | 'INVITADO';
   };
 }
 

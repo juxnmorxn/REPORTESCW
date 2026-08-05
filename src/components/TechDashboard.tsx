@@ -51,9 +51,9 @@ interface TechDashboardProps {
     id: number;
     nombre: string;
     email_o_usuario: string;
-    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO';
+    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO' | 'INVITADO';
     region_asignada?: string;
-    especialidad?: 'Antena' | 'Fibra' | 'Ambos';
+    especialidad?: string;
   };
 }
 

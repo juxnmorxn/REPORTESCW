@@ -58,8 +58,9 @@ interface AdminDashboardProps {
     id: number;
     nombre: string;
     email_o_usuario: string;
-    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO';
+    rol: 'SUPERADMIN' | 'SOPORTE' | 'TECNICO' | 'INVITADO';
     region_asignada?: string;
+    especialidad?: string;
   };
 }
 
@@ -116,8 +117,8 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
   });
   const [submittingUser, setSubmittingUser] = useState(false);
 
-  // Formulario Excel WispHub
   const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [clearBeforeImport, setClearBeforeImport] = useState(true);
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [excelMessage, setExcelMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -254,6 +255,32 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
     });
   };
 
+  const handleClearCustomersFromAdmin = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: '¿Vaciar Base de Datos de Clientes?',
+      message: '¿Estás seguro de que deseas eliminar TODOS los clientes actuales? Esta acción dejará la base de datos vacía para tu nuevo archivo CSV/Excel.',
+      confirmText: 'Sí, Vaciar Clientes',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/customers/clear', { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok) {
+            loadAdminData();
+            notify(data.message || 'Base de datos vaciada con éxito.', 'success', '¡BD de Clientes Limpia!');
+          } else {
+            notify(data.error || 'Error al vaciar base de datos', 'error');
+          }
+        } catch (err) {
+          notify('Error de conexión', 'error');
+        } finally {
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
+
   const handleUploadExcel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!excelFile) return;
@@ -263,6 +290,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
       setExcelMessage(null);
       const body = new FormData();
       body.append('file', excelFile);
+      body.append('clearBefore', String(clearBeforeImport));
 
       const res = await fetch('/api/customers/import-wisphub', {
         method: 'POST',
@@ -273,23 +301,23 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
       if (res.ok) {
         setExcelMessage({ type: 'success', text: data.message });
-        notify(data.message || 'Importación completada con éxito.', 'success', 'Importación Masiva WispHub');
+        notify(data.message || 'Importación completada con éxito.', 'success', 'Importación Masiva de Clientes');
         setExcelFile(null);
         loadAdminData();
       } else {
-        const errorDetail = data.error || 'Ocurrió un error al procesar el archivo Excel de WispHub.';
+        const errorDetail = data.error || 'Ocurrió un error al procesar el archivo CSV/Excel.';
         setExcelMessage({ type: 'error', text: errorDetail });
         notify(
-          `${errorDetail}\n\nAsegúrate de que el archivo contenga las columnas requeridas (Nombre, Ip, Plan Internet, Router, Dirección, Estado) y que no esté dañado.`,
+          `${errorDetail}\n\nAsegúrate de que el archivo contenga las columnas requeridas (Nombre, Ip, Plan Internet, Router, Dirección, Estado).`,
           'error',
-          'Error en Importación de Excel'
+          'Error en Importación'
         );
       }
     } catch (err: any) {
       const errorMsg = err?.message || 'Error de conexión o el archivo excede el tiempo límite de espera.';
-      setExcelMessage({ type: 'error', text: 'Error en la subida del archivo Excel' });
+      setExcelMessage({ type: 'error', text: 'Error en la subida del archivo CSV/Excel' });
       notify(
-        `Error al subir o procesar el archivo Excel:\n${errorMsg}`,
+        `Error al subir o procesar el archivo:\n${errorMsg}`,
         'error',
         'Fallo de Procesamiento'
       );
@@ -397,23 +425,35 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
       {/* VISTA 3: IMPORTADOR EXCEL WISPHUB */}
       {activeTab === 'importar' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5 max-w-2xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-400">
-              <FileSpreadsheet className="w-8 h-8" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-400">
+                <FileSpreadsheet className="w-8 h-8" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Importador Masivo CSV / Excel (WispHub)</h3>
+                <p className="text-xs text-slate-400">
+                  Sube tu reporte (.csv, .xlsx, .xls). Mapeará automáticamente Nombre, IP, Router y auto-detectará si es Antena o Fibra.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-white">Importador Masivo Excel de WispHub</h3>
-              <p className="text-xs text-slate-400">
-                Sube tu reporte estándar de WispHub (.xlsx). El sistema mapeará automáticamente Nombre, IP, Router y auto-detectará si es Antena o Fibra.
-              </p>
-            </div>
+
+            <button
+              type="button"
+              onClick={handleClearCustomersFromAdmin}
+              className="px-3 py-2 bg-red-950/40 hover:bg-red-950/70 border border-red-800/60 text-red-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+              title="Vaciar tabla de clientes de la base de datos"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Vaciar BD</span>
+            </button>
           </div>
 
           <form onSubmit={handleUploadExcel} className="space-y-4">
             <div className="border-2 border-dashed border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 text-center bg-slate-950/50 transition">
               <input
                 type="file"
-                accept=".xlsx, .xls"
+                accept=".csv, .xlsx, .xls, .txt"
                 onChange={(e) => setExcelFile(e.target.files?.[0] || null)}
                 className="hidden"
                 id="excel-input"
@@ -421,9 +461,23 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
               <label htmlFor="excel-input" className="cursor-pointer space-y-2 block">
                 <Upload className="w-10 h-10 mx-auto text-emerald-400" />
                 <span className="block text-sm font-bold text-slate-200">
-                  {excelFile ? excelFile.name : 'Haz clic para seleccionar el archivo Excel (.xlsx)'}
+                  {excelFile ? excelFile.name : 'Haz clic para seleccionar tu archivo CSV o Excel (.csv, .xlsx)'}
                 </span>
                 <span className="block text-xs text-slate-500">Columnas requeridas: Nombre, Ip, Plan Internet, Router, Dirección, Estado</span>
+              </label>
+            </div>
+
+            {/* OPCIÓN PARA LIMPIAR BD ANTES DE IMPORTAR */}
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                id="clear-checkbox"
+                checked={clearBeforeImport}
+                onChange={(e) => setClearBeforeImport(e.target.checked)}
+                className="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+              />
+              <label htmlFor="clear-checkbox" className="text-slate-300 font-bold cursor-pointer">
+                Vaciar la base de datos de clientes actual antes de importar el nuevo archivo CSV
               </label>
             </div>
 
@@ -443,12 +497,12 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
             <button
               type="submit"
               disabled={!excelFile || uploadingExcel}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs py-3 rounded-xl shadow-lg shadow-emerald-950 transition flex items-center justify-center gap-2"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs py-3 rounded-xl transition flex items-center justify-center gap-2"
             >
               {uploadingExcel ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>Procesando Excel WispHub...</span>
+                  <span>Procesando CSV / Excel...</span>
                 </>
               ) : (
                 <>
