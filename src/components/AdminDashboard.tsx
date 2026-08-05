@@ -25,6 +25,7 @@ import SupportDashboard from './SupportDashboard';
 import TechDashboard from './TechDashboard';
 import CustomersManager from './CustomersManager';
 import IpChangesManager from './IpChangesManager';
+import VlanIpManager from './VlanIpManager';
 import AppLayout from './AppLayout';
 
 import ConfirmModal from './ConfirmModal';
@@ -65,8 +66,8 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ user }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<string>('soporte');
-  const [subTab, setSubTab] = useState<string>('vlans');
+  const [activeTab, setActiveTab] = useState<string>('vlans');
+  const [subTab, setSubTab] = useState<string>('visitas');
   const [stats, setStats] = useState<StatsData | null>(null);
   const [usuarios, setUsuarios] = useState<UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -335,10 +336,51 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
       setSubTab={setSubTab}
       stats={stats}
     >
-      {/* VISTA 1: SOPORTE EMBEBIDO (Visitas / Clientes / Cambios IP) */}
+      {/* VISTA 0: GESTOR DE IPs & VLANs — PANTALLA PRINCIPAL (siempre accesible) */}
+      {activeTab === 'vlans' && <VlanIpManager user={user} />}
+
+      {/* VISTA 1: DASHBOARD DE RESUMEN (solo autenticados) */}
+      {activeTab === 'dashboard' && user.rol !== 'INVITADO' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Clientes</span>
+              <span className="text-3xl font-black text-white font-mono">{stats?.totalClientes ?? '—'}</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wide">Visitas Pendientes</span>
+              <span className="text-3xl font-black text-amber-400 font-mono">{stats?.pendientes ?? '—'}</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wide">Completadas</span>
+              <span className="text-3xl font-black text-emerald-400 font-mono">{stats?.completadas ?? '—'}</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Visitas</span>
+              <span className="text-3xl font-black text-white font-mono">{stats?.totalVisitas ?? '—'}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-sky-300 uppercase tracking-wide">En Proceso</span>
+              <span className="text-2xl font-black text-sky-400 font-mono">{stats?.enProceso ?? '—'}</span>
+            </div>
+            <div className="bg-slate-900 border border-red-900/50 p-4 rounded-2xl flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-red-300 uppercase tracking-wide">🚨 Urgentes</span>
+              <span className="text-2xl font-black text-red-400 font-mono">{stats?.urgentes ?? '—'}</span>
+            </div>
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-1">
+              <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wide">Técnicos Activos</span>
+              <span className="text-2xl font-black text-purple-400 font-mono">{stats?.totalTecnicos ?? '—'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VISTA 2: SOPORTE EMBEBIDO (Visitas / Clientes / Cambios IP) */}
       {activeTab === 'soporte' && <SupportDashboard user={user} subTab={subTab} />}
 
-      {/* VISTA 2: VISTA TÉCNICO EMBEBIDO */}
+      {/* VISTA 3: VISTA TÉCNICO EMBEBIDO */}
       {activeTab === 'tecnico' && <TechDashboard user={user} />}
 
       {/* VISTA 3: GESTIÓN DE USUARIOS */}
