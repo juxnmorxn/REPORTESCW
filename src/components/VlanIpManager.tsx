@@ -341,15 +341,13 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
 
-            {(user.rol === 'SUPERADMIN' || user.rol === 'SOPORTE') && (
-              <button
-                onClick={handleOpenNewVlan}
-                className="flex-1 md:flex-none bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-95"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Configurar Nueva VLAN</span>
-              </button>
-            )}
+            <button
+              onClick={handleOpenNewVlan}
+              className="flex-1 md:flex-none bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-95"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Configurar Nueva VLAN</span>
+            </button>
           </div>
         </div>
 
@@ -500,24 +498,22 @@ export default function VlanIpManager({ user, initialVlanId, onSelectIpForNewCli
                     VLAN <strong className="text-sky-400 font-mono">{v.vlan_id}</strong> ({v.rango_red})
                   </span>
 
-                  {(user.rol === 'SUPERADMIN' || user.rol === 'SOPORTE') && (
-                    <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-slate-800">
-                      <button
-                        onClick={() => handleOpenEditVlan(v)}
-                        className="text-slate-400 hover:text-white transition"
-                        title="Editar rango VLAN"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteVlan(v)}
-                        className="text-slate-400 hover:text-red-400 transition"
-                        title="Eliminar VLAN"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-slate-800">
+                    <button
+                      onClick={() => handleOpenEditVlan(v)}
+                      className="text-slate-400 hover:text-white transition"
+                      title="Editar rango VLAN"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteVlan(v)}
+                      className="text-slate-400 hover:text-red-400 transition"
+                      title="Eliminar VLAN"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

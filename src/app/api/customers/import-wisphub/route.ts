@@ -35,9 +35,13 @@ function resolveRowData(row: Record<string, any>, headerMap: Record<string, stri
     return key && row[key] !== undefined && row[key] !== null ? String(row[key]).trim() : '';
   };
 
+  let rawIp = getVal('ip');
+  if (rawIp.includes('/')) rawIp = rawIp.split('/')[0].trim();
+  if (rawIp.includes(':')) rawIp = rawIp.split(':')[0].trim();
+
   return {
     nombre: getVal('nombre'),
-    ip: getVal('ip'),
+    ip: rawIp,
     plan: getVal('plan'),
     routerRegion: getVal('region') || 'General',
     direccion: getVal('direccion'),

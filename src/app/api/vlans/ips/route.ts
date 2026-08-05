@@ -35,7 +35,10 @@ export async function GET(request: Request) {
     const ipToClientMap: { [ip: string]: any } = {};
     clientes.forEach((c: any) => {
       if (c.ip && typeof c.ip === 'string') {
-        const cleanedIp = c.ip.trim();
+        let cleanedIp = c.ip.trim();
+        // Remove trailing subnet mask or ports if present in raw CSV data (e.g., "172.19.1.45/24" -> "172.19.1.45")
+        if (cleanedIp.includes('/')) cleanedIp = cleanedIp.split('/')[0].trim();
+        if (cleanedIp.includes(':')) cleanedIp = cleanedIp.split(':')[0].trim();
         if (cleanedIp) {
           ipToClientMap[cleanedIp] = c;
         }
