@@ -65,7 +65,7 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ user }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<string>('soporte');
-  const [subTab, setSubTab] = useState<string>('visitas');
+  const [subTab, setSubTab] = useState<string>('vlans');
   const [stats, setStats] = useState<StatsData | null>(null);
   const [usuarios, setUsuarios] = useState<UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
